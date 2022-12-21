@@ -133,20 +133,20 @@ class Peek(QMainWindow):
         run()
 
     def create_header_widget(self):
-        self.snapshot_button = Peek.create_button("", f"{dir_path}/icon/camera.svg", "#0d6efd", "#0b5ed7", "#0a58ca" )
+        self.snapshot_button = Peek.create_button("", f"{dir_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.snapshot_button.clicked.connect(self.snapshot)
 
-        self.record_button = Peek.create_button(f"{self.capture.v_ext.upper()}", f"{dir_path}/icon/record-fill.svg", "#0d6efd", "#0b5ed7", "#0a58ca" )
+        self.record_button = Peek.create_button(f"{self.capture.v_ext.upper()}", f"{dir_path}/icon/record-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.record_button.setFixedWidth(84)
         self.record_button.clicked.connect(self.record)
 
-        self.stop_button = Peek.create_button("0:00", f"{dir_path}/icon/stop-fill.svg", "#dc3545", "#dd3d4c", "#db2f3f" )
+        self.stop_button = Peek.create_button("0:00", f"{dir_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
         self.stop_button.clicked.connect(self.record)
         self.stop_button.setFixedWidth(114)
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
         self.stop_button.hide()
 
-        self.fullscreen_button = Peek.create_button("", f"{dir_path}/icon/fullscreen.svg" )
+        self.fullscreen_button = Peek.create_button("", f"{dir_path}/icon/fullscreen.png" )
         self.fullscreen_button.clicked.connect(lambda: self.set_fullscreen(not self.capture.fullscreen))
 
 
@@ -198,11 +198,11 @@ class Peek(QMainWindow):
 
         self.record_button_grp = Peek.make_group_button(self.record_button, self.menu_button)
 
-        self.settings_button = Peek.create_button("", f"{dir_path}/icon/gear.svg")
+        self.settings_button = Peek.create_button("", f"{dir_path}/icon/gear.png")
         # self.settings_button.setFixedSize(30, 30)
         self.settings_button.clicked.connect(lambda : self.show_settings(not self.showing_settings))
 
-        self.close_button = Peek.create_button("", f"{dir_path}/icon/x.svg")
+        self.close_button = Peek.create_button("", f"{dir_path}/icon/x.png")
         self.close_button.setIconSize(QSize(20, 20))
         # self.close_button.setFixedSize(30, 30)
         self.close_button.clicked.connect(self.close_app)
@@ -268,7 +268,7 @@ class Peek(QMainWindow):
         self.quality_widget = Peek.create_row_widget("Quality", "Set the quality of the video", Peek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = Peek.create_row_widget("Delay Start", "Set the delay before the recording starts", Peek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.reset_widget = Peek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", Peek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = Peek.create_row_widget("Peek 2.3.5", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/peek"))
+        self.copyright_widget = Peek.create_row_widget("Peek 2.3.6", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/peek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -411,11 +411,11 @@ class Peek(QMainWindow):
     def set_fullscreen(self, value):
         self.block_resize_event = True
         if value:
-            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/fullscreen-exit.svg"))
+            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/fullscreen-exit.png"))
             self.setFixedSize(self.minimum_header_width, self.minimum_header_height) # prevent manual resizing height
             self.clearMask()
         else:
-            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/fullscreen.svg"))
+            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/fullscreen.png"))
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
@@ -439,7 +439,7 @@ class Peek(QMainWindow):
         if value:
             self.body_layout.setCurrentIndex(2)
             self.clearMask()
-            self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear-fill.svg"))
+            self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear-fill.png"))
             self.record_button_grp.hide()
             self.snapshot_button.hide()
             self.fullscreen_button.hide()
@@ -449,7 +449,7 @@ class Peek(QMainWindow):
             self.resize(self.settings_width, self.settings_height)
         else:
             self.body_layout.setCurrentIndex(0)
-            self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear.svg"))
+            self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear.png"))
             self.record_button_grp.show()
             self.snapshot_button.show()
             self.fullscreen_button.show()
@@ -651,7 +651,7 @@ class Capture(QThread):
         QThread.__init__(self)
         self.fullscreen = False
         self.show_cursor = True
-        self.arrow = QPixmap(f"{dir_path}/icon/cursor.svg")
+        self.arrow = QPixmap(f"{dir_path}/icon/cursor.png")
         self.pos_x = 0
         self.pos_y = 0
         self.width = 0
