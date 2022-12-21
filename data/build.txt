@@ -1,0 +1,13 @@
+python -m venv env
+
+& ./env/bin/Activate.ps1
+
+pip install pyside6
+
+python3 -m pip install --upgrade build
+
+python3 -m pip install --upgrade twine
+
+py -m build 
+
+python -m twine upload dist/*

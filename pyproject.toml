@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "peekplus"
+version = "2.1.7"
+authors = [
+  { name="Firat Kiral", email="firatkiral@gmail.com" },
+]
+description = "An animated GIF recorder"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "PySide6 >= 6.4.1",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/firatkiral/peek"
+"Bug Tracker" = "https://github.com/firatkiral/peek/issues"

@@ -1,4 +1,0 @@
-# flatpak build directories
-.flatpak-builder/
-com.uploadedlobster.peek_*/
-flatpak/
