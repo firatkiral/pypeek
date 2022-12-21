@@ -1,10 +1,10 @@
-### Cross Platform Python port of [Peek](https://github.com/phw/peek)
+### Cross platform Python port of [Peek](https://github.com/phw/peek)
 
 <br/>
 
 # PeekPlus - an animated GIF recorder
 
-## Simple screen recorder with an easy to use interface.
+### Simple screen recorder with an easy to use interface.
 
 <br/>
 <br/>
@@ -14,20 +14,20 @@
 <br/>
 <br/>
 
-## install:
+### install:
 
 ```console
 pip install peekplus
 ```
 
 
-## Usage:
+### Usage:
 
 ```console
 python -m peekplus
 ```
 
-## Ffmpeg
+### Ffmpeg
 
 Windows and mac ffmpeg binaries are included in the package. Linux users need to install ffmpeg.
 
