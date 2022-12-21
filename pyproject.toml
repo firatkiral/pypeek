@@ -22,5 +22,5 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/firatkiral/peek"
-"Bug Tracker" = "https://github.com/firatkiral/peek/issues"
+"Homepage" = "https://github.com/firatkiral/pypeek"
+"Bug Tracker" = "https://github.com/firatkiral/pypeek/issues"

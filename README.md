@@ -9,7 +9,7 @@
 <br/>
 <br/>
 
-![Peek recording itself](https://raw.githubusercontent.com/firatkiral/peek/main/data/screenshot/peek-recording-itself.gif)
+![Peek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/screenshot/peek-recording-itself.gif)
 
 <br/>
 <br/>

@@ -1,10 +1,10 @@
-import os, shutil, time, subprocess, tempfile, configparser, platform, static_ffmpeg
-from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
+import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg
+from PyQt6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
     QStackedLayout, QWidget, QLabel, QScrollArea, QApplication, \
     QSpinBox, QCheckBox, QPushButton, QSizeGrip, QFileDialog
-from PySide6.QtCore import Qt, QSize, QPoint, QEvent, QTimer, QThread, SIGNAL
-from PySide6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
+from PyQt6.QtCore import QObject, Qt, QSize, QPoint, QEvent, QTimer, QThread, pyqtSignal as SIGNAL, pyqtSlot as SLOT
+from PyQt6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
 
 __all__ = ['run']
 
@@ -17,17 +17,18 @@ class Peek(QMainWindow):
 
         # Settings
         self.capture = Capture()
-        self.connect(self.capture, SIGNAL("capturing_done(const QString&)"), self.capturing_done)
-        self.connect(self.capture, SIGNAL("countdown(int)"), self.countdown)
-        self.connect(self.capture, SIGNAL("run_timer(int)"), self.run_timer)
+        self.capture.c.capturing_done_signal.connect(self.capturing_done)
+        self.capture.c.countdown_signal.connect(self.countdown)
+        self.capture.c.run_timer_signal.connect(self.run_timer)
+
         self.capture.show_cursor = True
         self.capture.fullscreen = False
         self.capture.v_ext = "gif" # gif, mp4, webm
         self.capture.fps = 15
         self.capture.quality = "hi" # md, hi
         self.capture.delay = 3
-        self.record_width = 600
-        self.record_height = 400
+        self.record_width = 601
+        self.record_height = 401
         self.pos_x = 100
         self.pos_y = 100
 
@@ -54,13 +55,13 @@ class Peek(QMainWindow):
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.setSpacing(0)
-        self.main_layout.setDirection(QBoxLayout.BottomToTop)
+        self.main_layout.setDirection(QBoxLayout.Direction.BottomToTop)
         self.main_layout.addWidget(self.body_widget)
         self.main_layout.addWidget(self.header_widget)
 
         # Mainframe
         self.frame = QFrame(self)
-        self.frame.setFrameStyle(QFrame.Box)
+        self.frame.setFrameStyle(1)
         self.frame.setStyleSheet("QFrame { border: 3px solid #333; border-radius: 5px;}")
         self.frame.setLayout(self.main_layout)
         self.installEventFilter(self)
@@ -69,9 +70,9 @@ class Peek(QMainWindow):
         self.grip = QSizeGrip(self)
         self.grip.resize(20, 20)
 
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-        self.setAttribute(Qt.WA_NoSystemBackground, True)
-        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowTitle("Peek")
         self.resize(self.record_width, self.record_height)
         self.move(self.pos_x, self.pos_y)
@@ -245,10 +246,10 @@ class Peek(QMainWindow):
 
     def create_info_widget(self):
         self.info_size_label = QLabel()
-        self.info_size_label.setAlignment(Qt.AlignCenter)
+        self.info_size_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.info_shortcut_label = QLabel("Start/Stop: Ctrl+Alt+R")
 
-        self.info_shortcut_label.setAlignment(Qt.AlignCenter)
+        self.info_shortcut_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.info_layout = QVBoxLayout()
         self.info_layout.setContentsMargins(0, 0, 0, 0)
@@ -268,11 +269,11 @@ class Peek(QMainWindow):
         self.quality_widget = Peek.create_row_widget("Quality", "Set the quality of the video", Peek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = Peek.create_row_widget("Delay Start", "Set the delay before the recording starts", Peek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.reset_widget = Peek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", Peek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = Peek.create_row_widget("Peek 2.3.6", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/peek"))
+        self.copyright_widget = Peek.create_row_widget("Peek 2.3.6", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
-        self.settings_layout.setAlignment(Qt.AlignTop)
+        self.settings_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.settings_layout.addWidget(self.cursor_widget)
         self.settings_layout.addWidget(Peek.create_h_divider())
         self.settings_layout.addWidget(self.framerate_widget)
@@ -309,12 +310,12 @@ class Peek(QMainWindow):
         self.timer.stop()
         self.hide()
         geo = self.frame.geometry()
-        region = QRegion(self.frame.geometry(), QRegion.Rectangle)
+        region = QRegion(self.frame.geometry(), QRegion.RegionType.Rectangle)
         geo = self.frame.geometry()
         geo.moveTopLeft(QPoint(8, 43))
         geo.setWidth(geo.width() - 16)
         geo.setHeight(geo.height() - 51)
-        region -= QRegion(geo, QRegion.Rectangle)
+        region -= QRegion(geo, QRegion.RegionType.Rectangle)
         self.setMask(region)
         if not self.showing_settings:
             self.body_layout.setCurrentIndex(0)
@@ -385,6 +386,7 @@ class Peek(QMainWindow):
             self.block_resize_event = False
         self.capture.clear_cache_files()
 
+    @SLOT(str, name="capturing_done")
     def capturing_done(self, filepath):
         if filepath:
             filename = os.path.basename(filepath)
@@ -395,11 +397,13 @@ class Peek(QMainWindow):
         
         self.end_capture()
 
+    @SLOT(int, name="countdown")
     def countdown(self, value):
         self.stop_button.setText(f' {value}')
         if value == 0:
             self.stop_button.setText("0:00")
     
+    @SLOT(int, name="run_timer")
     def run_timer(self, value):
         minutes = value // 60
         seconds = value % 60
@@ -470,7 +474,7 @@ class Peek(QMainWindow):
             return
 
         diff = event.globalPosition() - self.drag_start_position
-        self.move(self.x() + diff.x(), self.y() + diff.y())
+        self.move(self.x() + int(diff.x()), self.y() + int(diff.y()))
         self.drag_start_position = event.globalPosition()
 
     def mouseReleaseEvent(self, event):
@@ -517,7 +521,7 @@ class Peek(QMainWindow):
         framerate_row.setContentsMargins(5, 5, 5, 5)
         framerate_input = QSpinBox()
         framerate_input.setFixedSize(40, 30)
-        framerate_input.setButtonSymbols(QSpinBox.NoButtons)
+        framerate_input.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
         framerate_input.setRange(min_value, max_value)
         framerate_input.setSingleStep(1)
         framerate_input.setValue(default_value)
@@ -645,6 +649,10 @@ class Peek(QMainWindow):
         link.setOpenExternalLinks(True)
         return link
 
+class Communicate(QObject):
+    capturing_done_signal = SIGNAL(str)
+    countdown_signal = SIGNAL(int)
+    run_timer_signal = SIGNAL(int)
 
 class Capture(QThread):
     def __init__(self):
@@ -667,29 +675,31 @@ class Capture(QThread):
         self.quality = "md" # md or hi
         self.ffmpeg_flags = {"gifmd": '-quality 50 -loop 0',
                              "gifhi": '-vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -quality 100 -loop 0',
-                             "mp4md": '-crf 32',
-                             "mp4hi": '-crf 18',
+                             "mp4md": '-vf scale="trunc(iw/2)*2:trunc(ih/2)*2" -crf 32',
+                             "mp4hi": '-vf scale="trunc(iw/2)*2:trunc(ih/2)*2" -crf 18',
                              "webmmd": '-crf 32 -b:v 0',
                              "webmhi": '-crf 18 -b:v 0'}
         self.fmt = "06d"
         self.fps = 15
         self.delay = 0
 
+        self.c = Communicate()
+
     def run(self):
         self.halt = False
         if self.delay > 0:
             delay = self.delay
             st = time.time()
-            self.emit(SIGNAL("countdown(int)"), delay)
+            self.c.countdown_signal.emit(delay)
             while delay > 0 and not self.halt:
                 passed = time.time()-st
                 if passed >= 1:
                     delay -= 1
-                    self.emit(SIGNAL("countdown(int)"), delay)
+                    self.c.countdown_signal.emit(delay)
                     st = time.time()
             
         if self.halt:
-            self.emit(SIGNAL("capturing_done(const QString&)"), None)
+            self.c.capturing_done_signal.emit(None)
             self.quit()
             return
         self.clear_cache_files()
@@ -708,11 +718,11 @@ class Capture(QThread):
             total_time = int(time.time()-self.start_capture_time)
             if total_time > seconds:
                 seconds = total_time
-                self.emit(SIGNAL("run_timer(int)"), seconds)
+                self.c.run_timer_signal.emit(seconds)
 
         self.stop_capture_time = time.time()
         video_file = self.encode_video()
-        self.emit(SIGNAL("capturing_done(const QString&)"), video_file)
+        self.c.capturing_done_signal.emit(video_file)
         self.quit()
 
     def encode_video(self):
@@ -723,6 +733,7 @@ class Capture(QThread):
         systemcall += " -i " + str(fprefix)+"%"+str(self.fmt)+".jpg"
         systemcall += " "+self.ffmpeg_flags[self.v_ext + self.quality]
         systemcall += " "+str(vidfile)
+        print(systemcall)
         try:
             subprocess.run(systemcall, shell=True, check=True)
         except subprocess.CalledProcessError as e:
@@ -750,7 +761,7 @@ class Capture(QThread):
             painter.end()
         
         pr = QScreen.devicePixelRatio(app.primaryScreen())
-        screenshot = screenshot.scaledToWidth(screenshot.size().width()/pr, Qt.SmoothTransformation)
+        screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
         if not self.fullscreen:
             screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
 
@@ -769,7 +780,7 @@ def run():
         window.destroy()
 
     if app == None:
-        app = QApplication()
+        app = QApplication(sys.argv)
     
     window = Peek()
     app.exec()
