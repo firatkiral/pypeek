@@ -17,14 +17,14 @@
 ### install:
 
 ```console
-pip install peekplus
+pip install pypeek
 ```
 
 
 ### Usage:
 
 ```console
-python -m peekplus
+python -m pypeek
 ```
 
 ### Ffmpeg
@@ -35,7 +35,7 @@ Windows and mac ffmpeg binaries are included in the package. Linux users need to
 <br/>
 
 ## License
-PeekPlus Copyright © 2022
+PyPeek Copyright © 2023
 
 Peek is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
