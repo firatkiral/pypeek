@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pypeek"
-version = "2.3.3"
+version = "2.3.5"
 authors = [
   { name="Firat Kiral", email="firatkiral@gmail.com" },
 ]
@@ -17,7 +17,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "PySide6 >= 6.4.1",
+    "PySide6 ~= 6.4.1",
+    "static-ffmpeg ~= 2.3",
 ]
 
 [project.urls]

@@ -27,10 +27,6 @@ pip install pypeek
 python -m pypeek
 ```
 
-### Ffmpeg
-
-Windows and mac ffmpeg binaries are included in the package. Linux users need to install ffmpeg.
-
 <br/>
 <br/>
 
