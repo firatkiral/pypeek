@@ -267,7 +267,7 @@ class Peek(QMainWindow):
         self.quality_widget = Peek.create_row_widget("Quality", "Set the quality of the video", Peek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = Peek.create_row_widget("Delay Start", "Set the delay before the recording starts", Peek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.reset_widget = Peek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", Peek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = Peek.create_row_widget("Peek 2.3.1", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/peek"))
+        self.copyright_widget = Peek.create_row_widget("Peek 2.3.2", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/peek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -664,7 +664,7 @@ class Capture(QThread):
         self.v_ext = "gif"
         self.os_type = platform.system()
         self.ffmpeg_bin = f'"{dir_path}/bin/ffmpeg.exe"' if self.os_type == "Windows" else f'"{dir_path}/bin/ffmpeg"' if self.os_type == "Darwin" else "ffmpeg"
-        self.os_type == "Darwin" and subprocess.run(f'chmod +x f"{dir_path}/bin/ffmpeg', shell=True, check=True)
+        self.os_type == "Darwin" and subprocess.run(f'chmod +x {dir_path}/bin/ffmpeg', shell=True, check=True)
         self.quality = "md" # md or hi
         self.ffmpeg_flags = {"gifmd": '-quality 50 -loop 0',
                              "gifhi": '-vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -quality 100 -loop 0',
