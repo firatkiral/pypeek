@@ -1,8 +1,6 @@
-### Cross Platform QT version of [Peek](https://github.com/phw/peek)
+### Cross Platform Python port of [Peek](https://github.com/phw/peek)
 
 <br/>
-<br/>
-
 
 # PeekPlus - an animated GIF recorder
 
