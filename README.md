@@ -2,7 +2,7 @@
 
 <br/>
 
-# PeekPlus - an animated GIF recorder
+# PyPeek - an animated GIF recorder
 
 ### Simple screen recorder with an easy to use interface.
 
