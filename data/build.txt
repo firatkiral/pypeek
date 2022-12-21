@@ -4,10 +4,10 @@ python -m venv env
 
 pip install pyside6
 
-python3 -m pip install --upgrade build
+python -m pip install --upgrade build
 
-python3 -m pip install --upgrade twine
+python -m pip install --upgrade twine
 
-py -m build 
+python -m build 
 
 python -m twine upload dist/*

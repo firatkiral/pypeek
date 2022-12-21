@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "peekplus"
-version = "2.1.7"
+version = "2.1.8"
 authors = [
   { name="Firat Kiral", email="firatkiral@gmail.com" },
 ]
