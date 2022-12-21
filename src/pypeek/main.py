@@ -386,7 +386,6 @@ class Peek(QMainWindow):
             self.block_resize_event = False
         self.capture.clear_cache_files()
 
-    @SLOT(str, name="capturing_done")
     def capturing_done(self, filepath):
         if filepath:
             filename = os.path.basename(filepath)
@@ -397,13 +396,11 @@ class Peek(QMainWindow):
         
         self.end_capture()
 
-    @SLOT(int, name="countdown")
     def countdown(self, value):
         self.stop_button.setText(f' {value}')
         if value == 0:
             self.stop_button.setText("0:00")
     
-    @SLOT(int, name="run_timer")
     def run_timer(self, value):
         minutes = value // 60
         seconds = value % 60
