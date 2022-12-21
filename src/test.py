@@ -1,3 +1,0 @@
-import pypeek
-
-pypeek.run()
