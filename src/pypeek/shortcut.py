@@ -3,12 +3,12 @@ import os, subprocess, platform, static_ffmpeg, shutil
 static_ffmpeg.add_paths() # download ffmpeg if necessary
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+desktop_path = os.path.expanduser("~/Desktop")
 
 def win():
     shortcut_name = "Peek"
     script_path = r"pypeek-gui"
     icon_path = f"{dir_path}/icon/peek.ico"
-    desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
     shortcut_path = os.path.join(desktop_path, shortcut_name + ".lnk")
 
     script = f'''
@@ -21,13 +21,11 @@ def win():
     subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-Command", script])
 
 def mac():
-    desktop_path = os.path.expanduser("~/Desktop")
-
     script = f'''
         tell application "Terminal"
-            activate
-            do script "pypeek; exit;"
-        end tell
+            if not (exists window 1) then reopen
+            do script "pypeek &;" in window 1
+        end tell 
         '''
 
     subprocess.run(["osacompile", "-o", f"{desktop_path}/Peek.app", "-e", script])
