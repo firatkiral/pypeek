@@ -26,7 +26,7 @@ class PyPeek(QMainWindow):
         self.capture.fullscreen = True
         self.capture.v_ext = "gif" # gif, mp4, webm
         self.capture.fps = 15
-        self.capture.quality = "hi" # md, hi
+        self.capture.quality = "md" # md, hi
         self.capture.delay = 3
         self.record_width = 600
         self.record_height = 400
@@ -128,7 +128,7 @@ class PyPeek(QMainWindow):
         self.capture.fullscreen = True
         self.capture.v_ext = "gif"
         self.capture.fps = 15
-        self.capture.quality = "hi"
+        self.capture.quality = "md"
         self.capture.delay = 3
         self.record_width = 600
         self.record_height = 400
@@ -271,7 +271,7 @@ class PyPeek(QMainWindow):
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.reset_widget = PyPeek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", PyPeek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = PyPeek.create_row_widget("Peek 2.4.5", "Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
+        self.copyright_widget = PyPeek.create_row_widget("Peek 2.4.6", "Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
