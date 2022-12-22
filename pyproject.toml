@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pypeek"
-version = "2.3.8"
+version = "2.4.0"
 description = "An animated GIF recorder"
 authors = [
   { name="Firat Kiral", email="firatkiral@gmail.com" },

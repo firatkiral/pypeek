@@ -1,19 +1,19 @@
-import os, subprocess, platform, static_ffmpeg
+import os, subprocess, platform, static_ffmpeg, shutil
 
 static_ffmpeg.add_paths() # download ffmpeg if necessary
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-# The path to the script file
-script_path = r"pypeek"
-
 # The name of the shortcut
 shortcut_name = "Peek"
 
-# The path to the icon file
-icon_path = f"{dir_path}/icon/peek.ico"
-
 def win():
+    # The path to the script file
+    script_path = r"pypeek"
+
+    # The path to the icon file
+    icon_path = f"{dir_path}/icon/peek.ico"
+
     # The directory where the shortcut should be created
     desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
 
@@ -34,21 +34,34 @@ def mac():
     # The directory where the shortcut should be created
     desktop_path = os.path.expanduser("~/Desktop")
 
-    # Create a symbolic link to the script
-    link_path = os.path.join(desktop_path, shortcut_name)
-    subprocess.run(["ln", "-s", script_path, link_path])
+    # # Save the script to a file
+    # script_path = f"{dir_path}/pypeek.command"
+    # with open( script_path, 'w') as f:
+    #     f.write('#!/bin/bash\n')
+    #     f.write('pypeek\n')
+    
+    # # Make the script executable
+    # subprocess.run(["chmod", "+x", script_path])
+
+    # # The path to the icon file
+    # icon_path = f"{dir_path}/icon/peek.icns"
+
+    
+
+    # # Create a symbolic link to the script
+    # link_path = os.path.join(desktop_path, shortcut_name)
+    # subprocess.run(["ln", "-s", script_path, link_path])
 
     # Set the icon for the symbolic link
     script = f'''
-        tell application "Finder"
-            set theFile to POSIX file "{link_path}"
-            set theIcon to POSIX file "{icon_path}"
-            tell folder (the container of theFile)
-                set theIcon of theFile to theIcon
-            end tell
-        end tell
-    '''
-    subprocess.run(["osascript", "-e", script])
+tell application "Terminal"
+    activate
+    do script "pypeek;"
+end tell
+'''
+
+    subprocess.run(["osacompile", "-o", f"{desktop_path}/peek.app", "-e", script])
+    shutil.copy(f"{dir_path}/icon/peek.icns", f"{desktop_path}/peek.app/Contents/Resources/applet.icns")
 
 
 def main():
