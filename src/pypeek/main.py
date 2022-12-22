@@ -125,7 +125,7 @@ class Peek(QMainWindow):
 
     def reset_settings(self):
         self.capture.show_cursor = True
-        self.capture.fullscreen = False
+        self.capture.fullscreen = True
         self.capture.v_ext = "gif"
         self.capture.fps = 15
         self.capture.quality = "hi"
