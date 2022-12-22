@@ -4,11 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pypeek"
-version = "2.3.7"
+version = "2.3.8"
+description = "An animated GIF recorder"
 authors = [
   { name="Firat Kiral", email="firatkiral@gmail.com" },
 ]
-description = "An animated GIF recorder"
+keywords = [
+  "recorder",
+  "screenshot",
+  "video",
+  "screen",
+  "capture",
+  "record",
+  "animation",
+  "gif",
+  "mp4",
+  "webm",
+]
 readme = "README.md"
 requires-python = ">=3.7"
 classifiers = [
@@ -20,6 +32,13 @@ dependencies = [
     "PyQt6 ~= 6.4.0",
     "static-ffmpeg ~= 2.3",
 ]
+
+[project.scripts]
+pypeek-cli = "pypeek:run"
+pypeek-shortcut = "pypeek.shortcut:main"
+
+[project.gui-scripts]
+pypeek = "pypeek:run"
 
 [project.urls]
 "Homepage" = "https://github.com/firatkiral/pypeek"
