@@ -20,11 +20,36 @@
 pip install pypeek
 ```
 
-
 ### Usage:
 
 ```console
+pypeek
+```
+
+### Create a desktop shortcut:
+
+```console
+pypeek shortcut
+```
+
+### Import as a module:
+
+```python
+import pypeek
+
+pypeek.show()
+```
+
+### Run as a script:
+
+```console
 python -m pypeek
+```
+
+### Uninstall:
+
+```console
+pip uninstall pypeek
 ```
 
 <br/>

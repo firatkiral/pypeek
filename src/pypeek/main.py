@@ -1,4 +1,5 @@
 import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg
+from .shortcut import create_shortcut
 from PyQt6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
     QStackedLayout, QWidget, QLabel, QScrollArea, QApplication, \
@@ -6,7 +7,7 @@ from PyQt6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
 from PyQt6.QtCore import QObject, Qt, QSize, QPoint, QEvent, QTimer, QThread, pyqtSignal as SIGNAL, pyqtSlot as SLOT
 from PyQt6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
 
-__all__ = ['run']
+__all__ = ['show']
 
 static_ffmpeg.add_paths()
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -132,7 +133,7 @@ class Peek(QMainWindow):
         self.record_width = 600
         self.record_height = 400
         self.save_settings()
-        run()
+        _show()
 
     def create_header_widget(self):
         self.snapshot_button = Peek.create_button("", f"{dir_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
@@ -270,7 +271,7 @@ class Peek(QMainWindow):
         self.quality_widget = Peek.create_row_widget("Quality", "Set the quality of the video", Peek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = Peek.create_row_widget("Delay Start", "Set the delay before the recording starts", Peek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.reset_widget = Peek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", Peek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = Peek.create_row_widget("Peek 2.4.0", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
+        self.copyright_widget = Peek.create_row_widget("Peek 2.4.1", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -770,7 +771,7 @@ class Capture(QThread):
         return file_path
 
 window = app = None
-def run():
+def _show():
     global window, app
 
     if window:
@@ -781,3 +782,11 @@ def run():
     
     window = Peek()
     app.exec()
+
+def show():
+    if len(sys.argv) > 1:
+        if sys.argv[1] == "shortcut":
+            create_shortcut()
+            return
+    
+    _show()
