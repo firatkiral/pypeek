@@ -271,7 +271,7 @@ class Peek(QMainWindow):
         self.quality_widget = Peek.create_row_widget("Quality", "Set the quality of the video", Peek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = Peek.create_row_widget("Delay Start", "Set the delay before the recording starts", Peek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.reset_widget = Peek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", Peek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = Peek.create_row_widget("Peek 2.4.1", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
+        self.copyright_widget = Peek.create_row_widget("Peek 2.4.2", "Cross platform screen recorder", Peek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
