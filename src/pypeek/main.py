@@ -1,11 +1,11 @@
 import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg
 from .shortcut import create_shortcut
-from PyQt6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
+from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
     QStackedLayout, QWidget, QLabel, QScrollArea, QApplication, \
     QSpinBox, QCheckBox, QPushButton, QSizeGrip, QFileDialog
-from PyQt6.QtCore import QObject, Qt, QSize, QPoint, QEvent, QTimer, QThread, pyqtSignal as SIGNAL, pyqtSlot as SLOT
-from PyQt6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
+from PySide6.QtCore import QObject, Qt, QSize, QPoint, QEvent, QTimer, QThread, Signal
+from PySide6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
 
 __all__ = ['show']
 
@@ -32,6 +32,7 @@ class PyPeek(QMainWindow):
         self.record_height = 400
         self.pos_x = 100
         self.pos_y = 100
+        self.needs_restart = False
 
         # load settings from json file
         self.load_settings()
@@ -133,7 +134,12 @@ class PyPeek(QMainWindow):
         self.record_width = 600
         self.record_height = 400
         self.save_settings()
-        PyPeek.restart()
+        self.restart()
+    
+    def restart(self):
+        self.needs_restart = True
+        self.close()
+        self.destroy()
 
     def create_header_widget(self):
         self.snapshot_button = PyPeek.create_button("", f"{dir_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
@@ -647,17 +653,11 @@ class PyPeek(QMainWindow):
         link.setStyleSheet("QLabel { color: #aaa; }")
         link.setOpenExternalLinks(True)
         return link
-    
-    @staticmethod
-    def restart():
-        global window
-        window.close()
-        window = PyPeek()
 
 class Communicate(QObject):
-    capturing_done_signal = SIGNAL(str)
-    countdown_signal = SIGNAL(int)
-    run_timer_signal = SIGNAL(int)
+    capturing_done_signal = Signal(str)
+    countdown_signal = Signal(int)
+    run_timer_signal = Signal(int)
 
 class Capture(QThread):
     def __init__(self):
@@ -758,13 +758,13 @@ class Capture(QThread):
             shutil.rmtree(self.cache_folder)
 
     def _snapshot(self, capture_count=None):
-        screenshot = QScreen.grabWindow(app.primaryScreen())
+        screenshot = QScreen.grabWindow(QApplication.instance().primaryScreen())
         if self.show_cursor:
             painter = QPainter(screenshot)
             painter.drawPixmap(QCursor.pos(), self.arrow)
             painter.end()
         
-        pr = QScreen.devicePixelRatio(app.primaryScreen())
+        pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
         screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
         if not self.fullscreen:
             screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
@@ -776,13 +776,13 @@ class Capture(QThread):
         screenshot.save(file_path, 'jpg')
         return file_path
 
-window = app = None
-def _show():
-    global window, app
-    app = QApplication(sys.argv)
-    window = PyPeek()
-    sys.exit(app.exec())
 
+def _show():
+    not QApplication.instance() and QApplication(sys.argv)
+    window = PyPeek()
+    QApplication.instance().exec()
+    if window.needs_restart:
+        _show()
 
 def show():
     if len(sys.argv) > 1:
