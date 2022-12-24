@@ -14,22 +14,28 @@
 <br/>
 <br/>
 
-### install:
+### Requirements:
+
+- Python 3.7 or later
+
+<br/>
+
+### Install:
 
 ```console
-pip install pypeek
+$ pip install pypeek
 ```
 
 ### Usage:
 
 ```console
-pypeek
+$ pypeek
 ```
 
 ### Create a desktop shortcut:
 
 ```console
-pypeek shortcut
+$ pypeek shortcut
 ```
 
 ### Import as a module:
@@ -40,16 +46,16 @@ import pypeek
 pypeek.show()
 ```
 
-### Run as a script:
+### Run as a module:
 
 ```console
-python -m pypeek
+$ python -m pypeek
 ```
 
 ### Uninstall:
 
 ```console
-pip uninstall pypeek
+$ pip uninstall pypeek
 ```
 
 <br/>

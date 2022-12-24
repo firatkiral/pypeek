@@ -1,9 +1,9 @@
-import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg
+import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg, requests
 from .shortcut import create_shortcut
 from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
     QStackedLayout, QWidget, QLabel, QScrollArea, QApplication, \
-    QSpinBox, QCheckBox, QPushButton, QSizeGrip, QFileDialog
+    QSpinBox, QCheckBox, QPushButton, QSizeGrip, QFileDialog, QMessageBox
 from PySide6.QtCore import QObject, Qt, QSize, QPoint, QEvent, QTimer, QThread, Signal
 from PySide6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
 
@@ -18,6 +18,7 @@ class PyPeek(QMainWindow):
 
         # Settings
         self.capture = Capture()
+
         self.capture.c.capturing_done_signal.connect(self.capturing_done)
         self.capture.c.countdown_signal.connect(self.countdown)
         self.capture.c.run_timer_signal.connect(self.run_timer)
@@ -32,11 +33,14 @@ class PyPeek(QMainWindow):
         self.record_height = 400
         self.pos_x = 100
         self.pos_y = 100
+        self.check_update_on_startup = True
         self.needs_restart = False
+        self.needs_update = False
 
         # load settings from json file
         self.load_settings()
 
+        self.version = "2.4.7"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -82,64 +86,7 @@ class PyPeek(QMainWindow):
         self.show()
         self.set_mask()
         self.capture.fullscreen and self.set_fullscreen()
-    
-    def load_settings(self):
-        home = os.path.expanduser('~')
-        config_file = os.path.join(home, '.peekconfig')
-        if not os.path.exists(config_file):
-            return
-
-        config = configparser.ConfigParser()
-        config.read(config_file)
-
-        self.capture.show_cursor = config.getboolean('capture', 'show_cursor')
-        self.capture.fullscreen = config.getboolean('capture', 'fullscreen')
-        self.capture.v_ext = config.get('capture', 'v_ext')
-        self.capture.fps = config.getint('capture', 'fps')
-        self.capture.quality = config.get('capture', 'quality')
-        self.capture.delay = config.getint('capture', 'delay')
-        self.record_width = config.getint('capture', 'width')
-        self.record_height = config.getint('capture', 'height')
-        self.pos_x = config.getint('capture', 'pos_x')
-        self.pos_y = config.getint('capture', 'pos_y')
-    
-    def save_settings(self):
-        home = os.path.expanduser('~')
-        config_file = os.path.join(home, '.peekconfig')
-        config = configparser.ConfigParser()
-
-        config['capture'] = {
-            'show_cursor': str(self.capture.show_cursor),
-            'fullscreen': str(self.capture.fullscreen),
-            'v_ext': self.capture.v_ext,
-            'fps': str(self.capture.fps),
-            'quality': self.capture.quality,
-            'delay': str(self.capture.delay),
-            'width': str(self.record_width),
-            'height': str(self.record_height),
-            'pos_x': str(self.pos().x()),
-            'pos_y': str(self.pos().y())
-        }
-
-        with open(config_file, 'w') as config_file:
-            config.write(config_file)
-
-    def reset_settings(self):
-        self.capture.show_cursor = True
-        self.capture.fullscreen = True
-        self.capture.v_ext = "gif"
-        self.capture.fps = 15
-        self.capture.quality = "md"
-        self.capture.delay = 3
-        self.record_width = 600
-        self.record_height = 400
-        self.save_settings()
-        self.restart()
-    
-    def restart(self):
-        self.needs_restart = True
-        self.close()
-        self.destroy()
+        self.check_update_on_startup and self.check_update()
 
     def create_header_widget(self):
         self.snapshot_button = PyPeek.create_button("", f"{dir_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
@@ -276,8 +223,9 @@ class PyPeek(QMainWindow):
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
+        self.update_widget = PyPeek.create_row_widget("Check For Updates", "Check for updates on startup", PyPeek.create_checkbox("", self.check_update_on_startup, self.set_check_update_on_startup))
         self.reset_widget = PyPeek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", PyPeek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = PyPeek.create_row_widget("Peek 2.4.7", "Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
+        self.copyright_widget = PyPeek.create_row_widget("About", f"Peek {self.version}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -289,6 +237,8 @@ class PyPeek(QMainWindow):
         self.settings_layout.addWidget(self.quality_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.delay_widget)
+        self.settings_layout.addWidget(PyPeek.create_h_divider())
+        self.settings_layout.addWidget(self.update_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.reset_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
@@ -304,6 +254,84 @@ class PyPeek(QMainWindow):
         scroll_area.setWidgetResizable(True)
 
         return scroll_area
+
+    def load_settings(self):
+        home = os.path.expanduser('~')
+        config_file = os.path.join(home, '.peekconfig')
+        if not os.path.exists(config_file):
+            return
+
+        config = configparser.ConfigParser()
+        config.read(config_file)
+
+        self.capture.show_cursor = config.getboolean('capture', 'show_cursor', fallback=True)
+        self.capture.fullscreen = config.getboolean('capture', 'fullscreen', fallback=True)
+        self.capture.v_ext = config.get('capture', 'v_ext', fallback='gif')
+        self.capture.fps = config.getint('capture', 'fps', fallback=15)
+        self.capture.quality = config.get('capture', 'quality', fallback='md')
+        self.capture.delay = config.getint('capture', 'delay', fallback=3)
+        self.record_width = config.getint('capture', 'width', fallback=600)
+        self.record_height = config.getint('capture', 'height', fallback=400)
+        self.pos_x = config.getint('capture', 'pos_x', fallback=100)
+        self.pos_y = config.getint('capture', 'pos_y', fallback=100)
+        self.check_update_on_startup = config.getboolean('capture', 'check_update_on_startup', fallback=True)
+    
+    def save_settings(self):
+        home = os.path.expanduser('~')
+        config_file = os.path.join(home, '.peekconfig')
+        config = configparser.ConfigParser()
+
+        config['capture'] = {
+            'show_cursor': str(self.capture.show_cursor),
+            'fullscreen': str(self.capture.fullscreen),
+            'v_ext': self.capture.v_ext,
+            'fps': str(self.capture.fps),
+            'quality': self.capture.quality,
+            'delay': str(self.capture.delay),
+            'width': str(self.record_width),
+            'height': str(self.record_height),
+            'pos_x': str(self.pos().x()),
+            'pos_y': str(self.pos().y()),
+            'check_update_on_startup': str(self.check_update_on_startup)
+        }
+
+        with open(config_file, 'w') as config_file:
+            config.write(config_file)
+
+    def reset_settings(self):
+        self.capture.show_cursor = True
+        self.capture.fullscreen = True
+        self.capture.v_ext = "gif"
+        self.capture.fps = 15
+        self.capture.quality = "md"
+        self.capture.delay = 3
+        self.record_width = 600
+        self.record_height = 400
+        self.pos_x = 100
+        self.pos_y = 100
+        self.check_update_on_startup = True
+        self.save_settings()
+        self.restart()
+    
+    def restart(self):
+        self.needs_restart = True
+        self.close()
+        self.destroy()
+    
+    def check_update(self):
+        if self.check_update_on_startup:
+            self.update_mod = CheckUpdate()
+            self.update_mod.c.update_check_done_signal.connect(self.do_update)
+            self.update_mod.start()
+    
+    def do_update(self, latest_version):
+        if latest_version != self.version:
+            result = PyPeek.confirm_dialog("Update Available", f"A new version of PyPeek {latest_version} is available. Do you want to download it?")
+            if result == QMessageBox.Ok:
+                self.needs_update = True
+                self.restart()
+        else:
+            print("App is up to date")
 
     def update_record_format(self):
         if self.gif_radio.isChecked():
@@ -439,6 +467,11 @@ class PyPeek(QMainWindow):
     def set_delay_start(self, value):
         self.capture.delay = value
     
+    def set_check_update_on_startup(self, value):
+        self.check_update_on_startup = value
+        if value:
+            self.check_update()
+
     def show_cursor(self, value):
         self.capture.show_cursor = value
 
@@ -653,15 +686,26 @@ class PyPeek(QMainWindow):
         link.setStyleSheet("QLabel { color: #aaa; }")
         link.setOpenExternalLinks(True)
         return link
+    
+    @staticmethod
+    def confirm_dialog(title, message):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText(message)
+        msg.setWindowTitle(title)
+        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        # msg.buttonClicked.connect(self.on_click)
+        return msg.exec()
 
 class Communicate(QObject):
     capturing_done_signal = Signal(str)
     countdown_signal = Signal(int)
     run_timer_signal = Signal(int)
-
+    update_check_done_signal = Signal(str)
+    
 class Capture(QThread):
     def __init__(self):
-        QThread.__init__(self)
+        super().__init__()
         self.fullscreen = False
         self.show_cursor = True
         self.arrow = QPixmap(f"{dir_path}/icon/cursor.png")
@@ -776,11 +820,28 @@ class Capture(QThread):
         screenshot.save(file_path, 'jpg')
         return file_path
 
+class CheckUpdate(QThread):
+    def __init__(self):
+        super().__init__()
+        self.c = Communicate()
+
+    def run(self):
+        try:
+            response = requests.get("https://pypi.org/pypi/pypeek/json")
+            if response.status_code == 200:
+                data = response.json()
+                self.c.update_check_done_signal.emit(data["info"]["version"])
+        except:
+            pass
+            
+        self.quit()
 
 def _show():
     not QApplication.instance() and QApplication(sys.argv)
     window = PyPeek()
     QApplication.instance().exec()
+    if window.needs_update:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pypeek"])
     if window.needs_restart:
         _show()
 
