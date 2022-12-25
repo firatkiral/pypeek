@@ -7,17 +7,25 @@ desktop_path = os.path.expanduser("~/Desktop")
 
 def win():
     shortcut_name = "Peek"
-    script_path = r"pypeek-gui"
     icon_path = f"{dir_path}/icon/peek.ico"
     shortcut_path = os.path.join(desktop_path, shortcut_name + ".lnk")
 
     script = f'''
     $WshShell = New-Object -ComObject WScript.Shell
     $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
-    $Shortcut.TargetPath = "{script_path}"
+    $Shortcut.TargetPath = "pypeek-gui"
     $Shortcut.IconLocation = "{icon_path}"
     $Shortcut.Save()
     '''
+    # script = f'''
+    # $WshShell = New-Object -ComObject WScript.Shell
+    # $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
+    # $Shortcut.TargetPath = "python"
+    # $Shortcut.Arguments = "-m pypeek"
+    # $Shortcut.IconLocation = "{icon_path}"
+    # $Shortcut.WindowStyle = 7
+    # $Shortcut.Save()
+    # '''
     subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-Command", script])
 
 def mac():

@@ -52,6 +52,12 @@ pypeek.show()
 $ python -m pypeek
 ```
 
+### Update:
+
+```console
+$ pip install --upgrade pypeek
+```
+
 ### Uninstall:
 
 ```console

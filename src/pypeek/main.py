@@ -35,12 +35,11 @@ class PyPeek(QMainWindow):
         self.pos_y = 100
         self.check_update_on_startup = True
         self.needs_restart = False
-        self.needs_update = False
 
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.4.7"
+        self.version = "2.6.3"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -315,8 +314,7 @@ class PyPeek(QMainWindow):
     
     def restart(self):
         self.needs_restart = True
-        self.close()
-        self.destroy()
+        self.close_app()
     
     def check_update(self):
         if self.check_update_on_startup:
@@ -326,12 +324,13 @@ class PyPeek(QMainWindow):
     
     def do_update(self, latest_version):
         if latest_version != self.version:
-            result = PyPeek.confirm_dialog("Update Available", f"A new version of PyPeek {latest_version} is available. Do you want to download it?")
-            if result == QMessageBox.Ok:
-                self.needs_update = True
-                self.restart()
-        else:
-            print("App is up to date")
+            result, not_update = PyPeek.confirm_dialog("Update Available!", 
+            f"\nUpdate {latest_version} available! \n\nClose app and run following command on terminal: \n\npip install --upgrade pypeek\n",
+            "Don't check for updates on startup")
+            if not_update:
+                self.check_update_on_startup = not not_update
+                self.restart() # so settings will be updated
+
 
     def update_record_format(self):
         if self.gif_radio.isChecked():
@@ -363,6 +362,7 @@ class PyPeek(QMainWindow):
             self.capture.clear_cache_files()
         self.save_settings()
         self.close()
+        self.destroy()
 
     def record(self):
         if self.recording:
@@ -688,14 +688,17 @@ class PyPeek(QMainWindow):
         return link
     
     @staticmethod
-    def confirm_dialog(title, message):
+    def confirm_dialog(title, message, checkbox=False):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText(message)
         msg.setWindowTitle(title)
-        msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-        # msg.buttonClicked.connect(self.on_click)
-        return msg.exec()
+        msg.setStandardButtons(QMessageBox.Ok)
+        if checkbox:
+            checkbox = QCheckBox(checkbox) 
+            msg.setCheckBox(checkbox)
+
+        return msg.exec(), checkbox.isChecked() if checkbox else False
 
 class Communicate(QObject):
     capturing_done_signal = Signal(str)
@@ -840,8 +843,7 @@ def _show():
     not QApplication.instance() and QApplication(sys.argv)
     window = PyPeek()
     QApplication.instance().exec()
-    if window.needs_update:
-        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pypeek"])
+    python = sys.executable
     if window.needs_restart:
         _show()
 
@@ -850,5 +852,5 @@ def show():
         if sys.argv[1] == "shortcut":
             create_shortcut()
             return
-    
+            
     _show()
