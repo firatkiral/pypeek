@@ -32,7 +32,7 @@ def mac():
     script = f'''
         tell application "Terminal"
             if not (exists window 1) then reopen
-            do script "pypeek &;" in window 1
+            do script "pypeek-gui" in window 1
         end tell 
         '''
 
