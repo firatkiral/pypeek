@@ -197,7 +197,7 @@ class DrawOver(QMainWindow):
         self.text_tool.triggered.connect(lambda: self.set_tool("text"))
         toolbar.addAction(self.text_tool)
 
-        self.clear_tool = QAction(QIcon(f"{dir_path}/icon/stars.png"), "", self)
+        self.clear_tool = QAction(QIcon(f"{dir_path}/icon/broom.png"), "", self)
         self.clear_tool.setToolTip("Clear Canvas")
         toolbar.addAction(self.clear_tool)
         self.clear_tool.triggered.connect(self.clear_canvas)
