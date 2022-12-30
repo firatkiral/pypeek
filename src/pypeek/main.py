@@ -843,7 +843,6 @@ def _show():
     not QApplication.instance() and QApplication(sys.argv)
     window = PyPeek()
     QApplication.instance().exec()
-    python = sys.executable
     if window.needs_restart:
         _show()
 
