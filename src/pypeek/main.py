@@ -1,5 +1,6 @@
 import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg, requests
 from .shortcut import create_shortcut
+from.drawover import DrawOver
 from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
     QStackedLayout, QWidget, QLabel, QScrollArea, QApplication, \
@@ -43,7 +44,6 @@ class PyPeek(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
-        self.recording = False
         self.showing_settings = False
         self.settings_width = 600
         self.settings_height = 400
@@ -93,10 +93,10 @@ class PyPeek(QMainWindow):
 
         self.record_button = PyPeek.create_button(f"{self.capture.v_ext.upper()}", f"{dir_path}/icon/record-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.record_button.setFixedWidth(84)
-        self.record_button.clicked.connect(self.record)
+        self.record_button.clicked.connect(self.start_record)
 
         self.stop_button = PyPeek.create_button("0:00", f"{dir_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
-        self.stop_button.clicked.connect(self.record)
+        self.stop_button.clicked.connect(self.stop_record)
         self.stop_button.setFixedWidth(114)
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
         self.stop_button.hide()
@@ -364,16 +364,16 @@ class PyPeek(QMainWindow):
         self.close()
         self.destroy()
 
-    def record(self):
-        if self.recording:
-            self.record_button_grp.show()
-            self.stop_button.hide()
-            self.capture.stop()
-        else:
-            self.record_button_grp.hide()
-            self.stop_button.show()
-            self.prepare_capture()
-            self.capture.start()
+    def start_record(self):
+        self.record_button_grp.hide()
+        self.stop_button.show()
+        self.prepare_capture()
+        self.capture.start()
+    
+    def stop_record(self):
+        self.record_button_grp.show()
+        self.stop_button.hide()
+        self.capture.stop()
         
     def snapshot(self):
         self.prepare_capture()
@@ -398,7 +398,6 @@ class PyPeek(QMainWindow):
         self.menu_button.setDisabled(True)
         self.fullscreen_button.setDisabled(True)
         self.settings_button.setDisabled(True)
-        self.recording = True
         if not self.capture.fullscreen:
             self.setFixedSize(self.record_width, self.record_height)
         
@@ -413,7 +412,6 @@ class PyPeek(QMainWindow):
         self.settings_button.setDisabled(False)
         self.close_button.setDisabled(False)
         self.grip.show()
-        self.recording = False
         if not self.capture.fullscreen:
             self.block_resize_event = True
             self.setMaximumSize(16777215, 16777215) # remove fixed height

@@ -9,10 +9,11 @@ from .qrangeslider import QRangeSlider
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-class DrawOver(QMainWindow):
+class DrawOver(QDialog):
     def __init__(self, image_path="img"):
         super().__init__()
         self.setFocusPolicy(Qt.StrongFocus)
+        # self.setWindowModality(Qt.ApplicationModal)
 
         self.image_width = 800
         self.image_height = 600
@@ -57,7 +58,7 @@ class DrawOver(QMainWindow):
         
         # Toolbar
         self.toolbar = self.create_toolbar()
-        self.addToolBar(self.toolbar)
+        # self.addToolBar(self.toolbar)
 
         # Canvas
         self.canvas_width = self.image_width
@@ -115,24 +116,28 @@ class DrawOver(QMainWindow):
         canvas_margin_layout.setContentsMargins(10,10,10,10)
         canvas_margin_layout.addWidget(self.view)
 
-
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(self.save_file)
+        save_button = QPushButton("Save", self)
+        save_button.setFixedWidth(100)
+        save_button.clicked.connect(self.accept)
+        cancel_button = QPushButton("Cancel", self)
+        cancel_button.setFixedWidth(100)
+        cancel_button.clicked.connect(self.reject)
         save_layout = QHBoxLayout()
+        save_layout.setSpacing(10)
         save_layout.setContentsMargins(20,20,20,20)
         save_layout.addStretch(1)
+        save_layout.addWidget(cancel_button)
         save_layout.addWidget(save_button)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
+        main_layout.addWidget(self.toolbar)
         main_layout.addLayout(canvas_margin_layout, 1)
         self.is_sequence and main_layout.addWidget(self.create_timeline(), 0)
         main_layout.addLayout(save_layout, 0)
-        main_widget = QWidget()
-        main_widget.setLayout(main_layout)
 
-        self.setCentralWidget(main_widget)
+        self.setLayout(main_layout)
         self.resize(self.image_width + 40, self.image_height+220 if self.is_sequence else self.image_height+130)
         self.set_tool("select")
 
@@ -243,10 +248,6 @@ class DrawOver(QMainWindow):
     def update_bg_image(self, image_filename):
         self.bg_pixmap = QPixmap(os.path.join(self.image_path, image_filename))
         self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.KeepAspectRatio))
-
-    def save_file(self):
-        pixmap = self.view.grab()
-        pixmap.save(self.image_path + "/output.png")
 
     def create_canvas(self):
         canvas = QLabel()
