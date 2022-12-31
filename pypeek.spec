@@ -37,7 +37,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['src/pypeek/icon/peek.icns'],
+    icon=['src/pypeek/icon/peek.ico'],
 )
 coll = COLLECT(
     exe,

@@ -13,8 +13,8 @@ __all__ = ['show']
 
 add_paths()
 
-if getattr(sys, 'frozen', False):
-    dir_path = os.path.abspath(os.path.dirname(sys.executable))
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    dir_path = sys._MEIPASS
 elif __file__:
     dir_path = os.path.abspath(os.path.dirname(__file__))
 

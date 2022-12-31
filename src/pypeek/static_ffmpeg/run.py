@@ -58,9 +58,10 @@ def download_file(url, local_path):
                 # If you have chunk encoded response uncomment if
                 # and set chunk_size parameter to None.
                 # if chunk:
-                sys.stdout.write(".")
+                # sys.stdout.write(".")
+                print(".", end="", flush=True)
                 file_d.write(chunk)
-            sys.stdout.write(f"\nDownload of {url} -> {local_path} completed.\n")
+            print(f"\nDownload of {url} -> {local_path} completed.\n")
     return local_path
 
 
