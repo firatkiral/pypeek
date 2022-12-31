@@ -1,6 +1,6 @@
 import os, shutil, time, subprocess, tempfile, configparser, sys, requests
 from .shortcut import create_shortcut
-import static_ffmpeg as static_ffmpeg
+from .static_ffmpeg import add_paths
 from.drawover import DrawOver
 from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
@@ -11,7 +11,7 @@ from PySide6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWind
 
 __all__ = ['show']
 
-static_ffmpeg.add_paths()
+add_paths()
 
 if getattr(sys, 'frozen', False):
     dir_path = os.path.abspath(os.path.dirname(sys.executable))
