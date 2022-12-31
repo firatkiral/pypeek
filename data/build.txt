@@ -2,7 +2,7 @@ python -m venv env
 
 & ./env/bin/Activate.ps1
 
-pip install -r requirements.txt
+pip install -r req.txt
 
 python -m pip install --upgrade build
 
