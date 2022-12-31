@@ -1,8 +1,9 @@
-import os, subprocess, platform, static_ffmpeg, shutil
+import os, subprocess, platform, sys, shutil
 
-static_ffmpeg.add_paths() # download ffmpeg if necessary
-
-dir_path = os.path.dirname(os.path.realpath(__file__))
+if getattr(sys, 'frozen', False):
+    dir_path = os.path.abspath(os.path.dirname(sys.executable))
+elif __file__:
+    dir_path = os.path.abspath(os.path.dirname(__file__))
 desktop_path = os.path.expanduser("~/Desktop")
 
 def win():

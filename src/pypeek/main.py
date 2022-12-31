@@ -1,5 +1,6 @@
-import os, shutil, time, subprocess, tempfile, configparser, sys, static_ffmpeg, requests
+import os, shutil, time, subprocess, tempfile, configparser, sys, requests
 from .shortcut import create_shortcut
+import static_ffmpeg as static_ffmpeg
 from.drawover import DrawOver
 from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
     QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
@@ -11,18 +12,24 @@ from PySide6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWind
 __all__ = ['show']
 
 static_ffmpeg.add_paths()
-dir_path = os.path.dirname(os.path.realpath(__file__))
+
+if getattr(sys, 'frozen', False):
+    dir_path = os.path.abspath(os.path.dirname(sys.executable))
+elif __file__:
+    dir_path = os.path.abspath(os.path.dirname(__file__))
 
 class PyPeek(QMainWindow):
     def __init__(self):
         super().__init__()
 
         # Settings
-        self.capture = Capture()
+        self.capture = Capture(self)
 
-        self.capture.c.capturing_done_signal.connect(self.capturing_done)
+        self.capture.c.recording_done_signal.connect(self.recording_done)
+        self.capture.c.encoding_done_signal.connect(self.encoding_done)
         self.capture.c.countdown_signal.connect(self.countdown)
         self.capture.c.run_timer_signal.connect(self.run_timer)
+        self.capture.c.record_stopped_signal.connect(self.stop_record)
 
         self.capture.show_cursor = True
         self.capture.fullscreen = True
@@ -331,7 +338,6 @@ class PyPeek(QMainWindow):
                 self.check_update_on_startup = not not_update
                 self.restart() # so settings will be updated
 
-
     def update_record_format(self):
         if self.gif_radio.isChecked():
             self.capture.v_ext = "gif"
@@ -368,7 +374,7 @@ class PyPeek(QMainWindow):
         self.record_button_grp.hide()
         self.stop_button.show()
         self.prepare_capture()
-        self.capture.start()
+        self.capture.record()
     
     def stop_record(self):
         self.record_button_grp.show()
@@ -378,6 +384,9 @@ class PyPeek(QMainWindow):
     def snapshot(self):
         self.prepare_capture()
         filepath = self.capture.snapshot()
+        drawover = DrawOver(filepath)
+        if drawover.exec() == 1 and drawover.drawover_image_path:
+            filepath = self.capture.snapshot_drawover(drawover.drawover_image_path)
         filename = os.path.basename(filepath)
         new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.expanduser("~") + "/" + filename, "Images (*.jpg)")
         
@@ -420,7 +429,15 @@ class PyPeek(QMainWindow):
             self.block_resize_event = False
         self.capture.clear_cache_files()
 
-    def capturing_done(self, filepath):
+    def recording_done(self, cache_folder):
+        drawover = DrawOver(cache_folder)
+        if drawover.exec() == 0:
+            self.end_capture()
+            return
+        
+        self.capture.encode(drawover.drawover_image_path)
+
+    def encoding_done(self, filepath):
         if filepath:
             filename = os.path.basename(filepath)
             new_filepath = QFileDialog.getSaveFileName(self, "Save Video", os.path.expanduser("~") + "/" + filename, f"Videos (*.{self.capture.v_ext})")
@@ -699,17 +716,21 @@ class PyPeek(QMainWindow):
         return msg.exec(), checkbox.isChecked() if checkbox else False
 
 class Communicate(QObject):
-    capturing_done_signal = Signal(str)
+    recording_done_signal = Signal(str)
+    encoding_done_signal = Signal(str)
     countdown_signal = Signal(int)
     run_timer_signal = Signal(int)
     update_check_done_signal = Signal(str)
+    record_stopped_signal = Signal()
     
 class Capture(QThread):
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
+        self.mode = "record" # record, encode
+        self.drawover_image_path = None
         self.fullscreen = False
         self.show_cursor = True
-        self.arrow = QPixmap(f"{dir_path}/icon/cursor.png")
+        self.cursor_image = QPixmap(f"{dir_path}/icon/cursor.png").scaled(28, 28, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.pos_x = 0
         self.pos_y = 0
         self.width = 0
@@ -717,11 +738,11 @@ class Capture(QThread):
         self.UID = ""
         self.capture_count = 0
         self.halt = False
-        self.cache_folder = f'{tempfile.gettempdir()}/peekcache/{time.strftime("%H%M%S")}' # different folder for each capture
-        self.start_capture_time = 0
+        self.cache_dir = f'{tempfile.gettempdir()}/pypeek'
+        self.current_cache_folder = f'{self.cache_dir}/{time.strftime("%H%M%S")}' # different folder for each capture
         self.start_capture_time = 0
         self.v_ext = "gif"
-        self.ffmpeg_bin = "static_ffmpeg"
+        self.ffmpeg_bin = "ffmpeg"
         self.quality = "md" # md or hi
         self.ffmpeg_flags = {"gifmd": '-quality 50 -loop 0',
                              "gifhi": '-vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -quality 100 -loop 0',
@@ -732,53 +753,82 @@ class Capture(QThread):
         self.fmt = "06d"
         self.fps = 15
         self.delay = 0
+        self.stop_after = 0
 
         self.c = Communicate()
 
     def run(self):
-        self.halt = False
-        if self.delay > 0:
-            delay = self.delay
-            st = time.time()
-            self.c.countdown_signal.emit(delay)
-            while delay > 0 and not self.halt:
-                passed = time.time()-st
-                if passed >= 1:
-                    delay -= 1
-                    self.c.countdown_signal.emit(delay)
-                    st = time.time()
-            
-        if self.halt:
-            self.c.capturing_done_signal.emit(None)
-            self.quit()
-            return
-        self.clear_cache_files()
-        self.UID = time.strftime("%Y%m%d-%H%M%S")
-        self.capture_count = 0
-        self.start_capture_time = time.time()
-        period = 1.0/self.fps
-        seconds = 0
-        while not self.halt:
-            st = time.time()
-            self._snapshot(self.capture_count)
-            self.capture_count += 1
-            td = time.time()-st
-            wait = period-td
-            if(wait>0):time.sleep(wait)
-            total_time = int(time.time()-self.start_capture_time)
-            if total_time > seconds:
-                seconds = total_time
-                self.c.run_timer_signal.emit(seconds)
+        if self.mode == "record":
+            self.halt = False
+            if self.delay > 0:
+                delay = self.delay
+                st = time.time()
+                self.c.countdown_signal.emit(delay)
+                while delay > 0 and not self.halt:
+                    passed = time.time()-st
+                    if passed >= 1:
+                        delay -= 1
+                        self.c.countdown_signal.emit(delay)
+                        st = time.time()
+                
+            if self.halt:
+                self.c.encoding_done_signal.emit(None)
+                self.quit()
+                return
+            self.clear_cache_files()
+            self.UID = time.strftime("%Y%m%d-%H%M%S")
+            self.capture_count = 0
+            self.start_capture_time = time.time()
+            period = 1.0/self.fps
+            seconds = 0
+            while not self.halt:
+                st = time.time()
+                self._snapshot(self.capture_count)
+                self.capture_count += 1
+                td = time.time()-st
+                wait = period-td
+                if(wait>0):time.sleep(wait)
+                total_time = int(time.time()-self.start_capture_time)
+                if total_time > seconds:
+                    seconds = total_time
+                    self.c.run_timer_signal.emit(seconds)
+                if self.stop_after != 0 and total_time >= self.stop_after:
+                    self.c.record_stopped_signal.emit()
 
-        self.stop_capture_time = time.time()
-        video_file = self.encode_video()
-        self.c.capturing_done_signal.emit(video_file)
+            self.stop_capture_time = time.time()
+            self.c.recording_done_signal.emit(self.current_cache_folder)
+        elif self.mode == "encode":
+            if self.drawover_image_path:
+                self._drawover()
+                self.drawover_image_path = None
+            self.encode_video()
+        
         self.quit()
+    
+    def record(self):
+        self.mode = "record"
+        self.start()
+
+    def encode(self, drawover_image_path=None):
+        self.mode = "encode"
+        self.drawover_image_path = drawover_image_path
+        self.start()
+    
+    def _drawover(self):
+        drawover_pixmap = QPixmap(self.drawover_image_path)
+        pos = QPoint()
+        for i in range(self.capture_count):
+            filename = f'{self.current_cache_folder}/peek_{self.UID}_{str(i).zfill(6)}.jpg'
+            pixmap = QPixmap(filename)
+            painter = QPainter(pixmap)
+            painter.drawPixmap(pos, drawover_pixmap)
+            painter.end()
+            pixmap.save(filename, "jpg")
 
     def encode_video(self):
-        fprefix = (f'{self.cache_folder}/peek_{self.UID}_')
+        fprefix = (f'{self.current_cache_folder}/peek_{self.UID}_')
         fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
-        vidfile = f"{self.cache_folder}/peek_{self.UID}.{self.v_ext}"
+        vidfile = f"{self.current_cache_folder}/peek_{self.UID}.{self.v_ext}"
         systemcall = str(self.ffmpeg_bin)+" -r " + str(fps) + " -y"
         systemcall += " -i " + str(fprefix)+"%"+str(self.fmt)+".jpg"
         systemcall += " "+self.ffmpeg_flags[self.v_ext + self.quality]
@@ -788,6 +838,7 @@ class Capture(QThread):
         except subprocess.CalledProcessError as e:
             vidfile = None
 
+        self.c.encoding_done_signal.emit(vidfile)
         return vidfile
         
     def stop(self):
@@ -798,15 +849,29 @@ class Capture(QThread):
         self.capture_count = 0
         return self._snapshot()
 
+    def snapshot_drawover(self, drawover_image_path):
+        drawover_pixmap = QPixmap(drawover_image_path)
+        filename = f'{self.current_cache_folder}/peek_{self.UID}.jpg'
+        pixmap = QPixmap(filename)
+        painter = QPainter(pixmap)
+        painter.drawPixmap(QPoint(), drawover_pixmap)
+        painter.end()
+        pixmap.save(filename, "jpg")
+        return filename
+
     def clear_cache_files(self):
-        if os.path.exists(self.cache_folder):
-            shutil.rmtree(self.cache_folder)
+        if os.path.exists(self.current_cache_folder):
+            shutil.rmtree(self.current_cache_folder)
+    
+    def clear_cache_dir(self):
+        if os.path.exists(self.cache_dir):
+            shutil.rmtree(self.cache_dir)
 
     def _snapshot(self, capture_count=None):
         screenshot = QScreen.grabWindow(QApplication.instance().primaryScreen())
         if self.show_cursor:
             painter = QPainter(screenshot)
-            painter.drawPixmap(QCursor.pos(), self.arrow)
+            painter.drawPixmap(QCursor.pos(), self.cursor_image)
             painter.end()
         
         pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
@@ -814,8 +879,8 @@ class Capture(QThread):
         if not self.fullscreen:
             screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
 
-        not os.path.exists(self.cache_folder) and os.makedirs(self.cache_folder)
-        file_path = (f'{self.cache_folder}/peek_{self.UID}.jpg')
+        not os.path.exists(self.current_cache_folder) and os.makedirs(self.current_cache_folder)
+        file_path = (f'{self.current_cache_folder}/peek_{self.UID}.jpg')
         file_path = file_path[:-4] + f'_{capture_count:06d}.jpg' if capture_count != None else file_path
 
         screenshot.save(file_path, 'jpg')

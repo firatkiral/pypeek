@@ -29,8 +29,7 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "PySide6 ~= 6.4.0",
-    "static-ffmpeg ~= 2.3",
+    "PySide6 ~= 6.4.0"
 ]
 
 [project.scripts]

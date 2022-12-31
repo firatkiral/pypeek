@@ -2,4 +2,6 @@
 /env
 /.vscode
 /dist
+/build
+/src/static_ffmpeg/bin
 __pycache__

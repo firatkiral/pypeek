@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, tempfile
 from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
@@ -7,10 +7,13 @@ from math import radians, cos, sin, atan2, pi
 from .undo import Undo, ClearSceneCmd, AddSceneItemCmd
 from .qrangeslider import QRangeSlider
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
+if getattr(sys, 'frozen', False):
+    dir_path = os.path.abspath(os.path.dirname(sys.executable))
+elif __file__:
+    dir_path = os.path.abspath(os.path.dirname(__file__))
 
 class DrawOver(QDialog):
-    def __init__(self, image_path="img"):
+    def __init__(self, image_path=""):
         super().__init__()
         self.setFocusPolicy(Qt.StrongFocus)
         # self.setWindowModality(Qt.ApplicationModal)
@@ -19,8 +22,11 @@ class DrawOver(QDialog):
         self.image_height = 600
 
         self.is_sequence = False
+        self.drawover_image_path = None
+        self.out_filename = "drawover.png"
+        self.out_path = f'{tempfile.gettempdir()}/pypeek'
         if os.path.isdir(image_path):
-            self.image_path = image_path
+            self.out_path = image_path
             image_dir = QDir(image_path)
             self.image_filenames = image_dir.entryList(['*.jpg'], QDir.Filter.Files, QDir.SortFlag.Name)
             self.is_sequence = True
@@ -34,6 +40,7 @@ class DrawOver(QDialog):
             self.bg_pixmap = QPixmap(image_path)
             self.image_width = self.bg_pixmap.width()
             self.image_height = self.bg_pixmap.height()
+            self.out_path = os.path.dirname(image_path)
         else:
             self.bg_pixmap = QPixmap(self.image_width, self.image_height)
             self.bg_pixmap.fill(Qt.white)
@@ -81,12 +88,12 @@ class DrawOver(QDialog):
         canvas_layout.addWidget(self.canvas)
         canvas_layout.addWidget(self.text_widget)
 
-        canvas_widget = QWidget()
-        canvas_widget.setLayout(canvas_layout)
-        canvas_widget.resize(self.image_width, self.image_height)
+        self.canvas_widget = QWidget()
+        self.canvas_widget.setLayout(canvas_layout)
+        self.canvas_widget.resize(self.image_width, self.image_height)
 
         self.scene = QGraphicsScene(self)
-        self.scene.addWidget(canvas_widget)
+        self.scene.addWidget(self.canvas_widget)
         self.view = QGraphicsView(self.scene)
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setRenderHint(QPainter.SmoothPixmapTransform)
@@ -118,7 +125,7 @@ class DrawOver(QDialog):
 
         save_button = QPushButton("Save", self)
         save_button.setFixedWidth(100)
-        save_button.clicked.connect(self.accept)
+        save_button.clicked.connect(self.save_drawover_file)
         cancel_button = QPushButton("Cancel", self)
         cancel_button.setFixedWidth(100)
         cancel_button.clicked.connect(self.reject)
@@ -246,8 +253,22 @@ class DrawOver(QDialog):
         return bg_image
 
     def update_bg_image(self, image_filename):
-        self.bg_pixmap = QPixmap(os.path.join(self.image_path, image_filename))
+        self.bg_pixmap = QPixmap(os.path.join(self.out_path, image_filename))
         self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.KeepAspectRatio))
+
+    def save_drawover_file(self):
+        if len(self.items) > 0:
+            self.drawover_image_path = os.path.join(self.out_path, self.out_filename)
+            self.canvas_widget.hide()
+            pixmap = QPixmap(self.canvas_width, self.canvas_height)
+            pixmap.fill(Qt.transparent)
+            painter = QPainter(pixmap)
+            self.scene.render(painter)
+            painter.end()
+            self.canvas_widget.show()
+            pixmap.save(self.drawover_image_path, "png")
+
+        self.accept()
 
     def create_canvas(self):
         canvas = QLabel()
@@ -577,7 +598,6 @@ class DrawOver(QDialog):
                 text_input.setReadOnly(False),
                 text_input.setFocus(),
             text_input.mousePressEvent = mousePressEvent
-
         
     def _mouseMoveEvent(self, e):
         if not self.dragging:
