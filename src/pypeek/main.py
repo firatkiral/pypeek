@@ -2,12 +2,9 @@ import os, shutil, time, subprocess, tempfile, configparser, sys, requests
 from .shortcut import create_shortcut
 from .static_ffmpeg import add_paths
 from.drawover import DrawOver
-from PySide6.QtWidgets import QMainWindow, QFrame, QVBoxLayout, \
-    QBoxLayout, QMenu, QWidgetAction, QRadioButton, QHBoxLayout, \
-    QStackedLayout, QWidget, QLabel, QScrollArea, QApplication, \
-    QSpinBox, QCheckBox, QPushButton, QSizeGrip, QFileDialog, QMessageBox
-from PySide6.QtCore import QObject, Qt, QSize, QPoint, QEvent, QTimer, QThread, Signal
-from PySide6.QtGui import QPixmap, QPainter, QActionGroup, QRegion, QIcon, QWindow, QCursor, QScreen, QGuiApplication
+from PySide6.QtWidgets import *
+from PySide6.QtCore import *
+from PySide6.QtGui import *
 
 __all__ = ['show']
 
@@ -28,9 +25,10 @@ class PyPeek(QMainWindow):
 
         self.capture.c.recording_done_signal.connect(self.recording_done)
         self.capture.c.encoding_done_signal.connect(self.encoding_done)
+        self.capture.c.snapshot_done_signal.connect(self.snapshot_done)
+        self.capture.c.capture_stopped_signal.connect(self.end_capture)
         self.capture.c.countdown_signal.connect(self.countdown)
         self.capture.c.run_timer_signal.connect(self.run_timer)
-        self.capture.c.record_stopped_signal.connect(self.stop_record)
 
         self.capture.show_cursor = True
         self.capture.fullscreen = True
@@ -48,7 +46,7 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.6.4"
+        self.version = "2.6.3"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -101,7 +99,7 @@ class PyPeek(QMainWindow):
         self.record_button.clicked.connect(self.start_record)
 
         self.stop_button = PyPeek.create_button("0:00", f"{dir_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
-        self.stop_button.clicked.connect(self.stop_record)
+        self.stop_button.clicked.connect(self.stop_capture)
         self.stop_button.setFixedWidth(114)
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
         self.stop_button.hide()
@@ -222,10 +220,11 @@ class PyPeek(QMainWindow):
         return info_widget
 
     def create_settings_widget(self):
-        self.cursor_widget = PyPeek.create_row_widget("Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
+        self.cursor_widget = PyPeek.create_row_widget("Capture Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
+        self.duration_widget = PyPeek.create_row_widget("Recording Duration", "Set the duration of the recording (0 for unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
         self.update_widget = PyPeek.create_row_widget("Check For Updates", "Check for updates on startup", PyPeek.create_checkbox("", self.check_update_on_startup, self.set_check_update_on_startup))
         self.reset_widget = PyPeek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", PyPeek.create_button("Reset Settings", callback = self.reset_settings))
         self.copyright_widget = PyPeek.create_row_widget("About", f"Peek {self.version}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
@@ -240,6 +239,8 @@ class PyPeek(QMainWindow):
         self.settings_layout.addWidget(self.quality_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.delay_widget)
+        self.settings_layout.addWidget(PyPeek.create_h_divider())
+        self.settings_layout.addWidget(self.duration_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.update_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
@@ -279,6 +280,7 @@ class PyPeek(QMainWindow):
         self.capture.fps = config.getint('capture', 'fps', fallback=15)
         self.capture.quality = config.get('capture', 'quality', fallback='md')
         self.capture.delay = config.getint('capture', 'delay', fallback=3)
+        self.capture.duration = config.getint('capture', 'duration', fallback=0)
         self.record_width = config.getint('capture', 'width', fallback=600)
         self.record_height = config.getint('capture', 'height', fallback=400)
         self.pos_x = config.getint('capture', 'pos_x', fallback=100)
@@ -297,6 +299,7 @@ class PyPeek(QMainWindow):
             'fps': str(self.capture.fps),
             'quality': self.capture.quality,
             'delay': str(self.capture.delay),
+            'duration': str(self.capture.duration),
             'width': str(self.record_width),
             'height': str(self.record_height),
             'pos_x': str(self.pos().x()),
@@ -314,6 +317,7 @@ class PyPeek(QMainWindow):
         self.capture.fps = 15
         self.capture.quality = "md"
         self.capture.delay = 3
+        self.capture.duration = 0
         self.record_width = 600
         self.record_height = 400
         self.pos_x = 100
@@ -335,11 +339,15 @@ class PyPeek(QMainWindow):
     def do_update(self, latest_version):
         if latest_version != self.version:
             result, not_update = PyPeek.confirm_dialog("Update Available!", 
-            f"\nUpdate {latest_version} available! \n\nClose app and run following command on terminal: \n\npip install --upgrade pypeek\n",
+            f"\nNew version {latest_version} is available.\n\nDo you want to download it now?", 
             "Don't check for updates on startup")
+            if result == QMessageBox.Ok:
+                url = QUrl('https://github.com/firatkiral/pypeek/wiki')
+                if not QDesktopServices.openUrl(url):
+                    QMessageBox.warning(self, 'Open Url', 'Could not open url')
             if not_update:
                 self.check_update_on_startup = not not_update
-                self.restart() # so settings will be updated
+                self.restart()
 
     def update_record_format(self):
         if self.gif_radio.isChecked():
@@ -374,20 +382,18 @@ class PyPeek(QMainWindow):
         self.destroy()
 
     def start_record(self):
-        self.record_button_grp.hide()
-        self.stop_button.show()
         self.prepare_capture()
         self.capture.record()
     
-    def stop_record(self):
-        self.record_button_grp.show()
-        self.stop_button.hide()
+    def stop_capture(self):
         self.capture.stop()
         
     def snapshot(self):
         self.prepare_capture()
+        self.capture.snapshot()
+    
+    def snapshot_done(self, filepath):
         self.setVisible(False)
-        filepath = self.capture.snapshot()
         drawover = DrawOver(filepath)
         drawover_res = drawover.exec()
         self.setVisible(True)
@@ -408,6 +414,8 @@ class PyPeek(QMainWindow):
         drawover.deleteLater()
     
     def prepare_capture(self):
+        self.record_button_grp.hide()
+        self.stop_button.show()
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
         self.capture.width = self.record_area_widget.width()
         self.capture.height = self.record_area_widget.height()
@@ -422,6 +430,8 @@ class PyPeek(QMainWindow):
             self.setFixedSize(self.record_width, self.record_height)
         
     def end_capture(self):
+        self.record_button_grp.show()
+        self.stop_button.hide()
         self.snapshot_button.setDisabled(False)
         self.record_button.setDisabled(False)
         self.record_button.setText(self.capture.v_ext.upper())
@@ -468,8 +478,11 @@ class PyPeek(QMainWindow):
         self.grip_tr.move(self.frame.width() - 20, 0)
 
     def recording_done(self, cache_folder):
+        self.record_button_grp.show()
+        self.stop_button.hide()
         self.setVisible(False)
         drawover = DrawOver(cache_folder)
+        drawover.setFocus()
         drawover_res = drawover.exec()
         self.setVisible(True)
         if drawover_res == 0:
@@ -523,6 +536,9 @@ class PyPeek(QMainWindow):
     
     def set_delay_start(self, value):
         self.capture.delay = value
+    
+    def set_duration(self, value):
+        self.capture.duration = value
     
     def set_check_update_on_startup(self, value):
         self.check_update_on_startup = value
@@ -611,6 +627,7 @@ class PyPeek(QMainWindow):
         framerate_row.setSpacing(0)
         framerate_row.setContentsMargins(5, 5, 5, 5)
         framerate_input = QSpinBox()
+        framerate_input.setAlignment(Qt.AlignRight)
         framerate_input.setFixedSize(40, 30)
         framerate_input.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
         framerate_input.setRange(min_value, max_value)
@@ -746,7 +763,7 @@ class PyPeek(QMainWindow):
         msg.setIcon(QMessageBox.Information)
         msg.setText(message)
         msg.setWindowTitle(title)
-        msg.setStandardButtons(QMessageBox.Ok)
+        msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
         if checkbox:
             checkbox = QCheckBox(checkbox) 
             msg.setCheckBox(checkbox)
@@ -756,15 +773,17 @@ class PyPeek(QMainWindow):
 class Communicate(QObject):
     recording_done_signal = Signal(str)
     encoding_done_signal = Signal(str)
+    snapshot_done_signal = Signal(str)
     countdown_signal = Signal(int)
     run_timer_signal = Signal(int)
     update_check_done_signal = Signal(str)
-    record_stopped_signal = Signal()
+    capture_stopped_signal = Signal()
     
 class Capture(QThread):
     def __init__(self, app):
         super().__init__()
-        self.mode = "record" # record, encode
+        self.app = app
+        self.mode = "record" # record, encode, snapshot
         self.encode_options = None
         self.fullscreen = False
         self.show_cursor = True
@@ -792,26 +811,16 @@ class Capture(QThread):
         self.fmt = "06d"
         self.fps = 15
         self.delay = 0
-        self.stop_after = 0
+        self.duration = 0
 
         self.c = Communicate()
 
     def run(self):
+        self.halt = False
         if self.mode == "record":
-            self.halt = False
-            if self.delay > 0:
-                delay = self.delay
-                st = time.time()
-                self.c.countdown_signal.emit(delay)
-                while delay > 0 and not self.halt:
-                    passed = time.time()-st
-                    if passed >= 1:
-                        delay -= 1
-                        self.c.countdown_signal.emit(delay)
-                        st = time.time()
-                
+            self.delay_countdown()
             if self.halt:
-                self.c.encoding_done_signal.emit(None)
+                self.c.capture_stopped_signal.emit()
                 self.quit()
                 return
             self.clear_cache_files()
@@ -831,19 +840,47 @@ class Capture(QThread):
                 if total_time > seconds:
                     seconds = total_time
                     self.c.run_timer_signal.emit(seconds)
-                if self.stop_after != 0 and total_time >= self.stop_after:
-                    self.c.record_stopped_signal.emit()
+                if self.duration != 0 and total_time >= self.duration:
+                    self.halt = True
 
             self.stop_capture_time = time.time()
             self.c.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
             if self.encode_options:
                 self._drawover()
-            self.encode_video()
+            video_file = self.encode_video()
+            self.c.encoding_done_signal.emit(video_file)
+        elif self.mode == "snapshot":
+            self.delay_countdown()
+            if self.halt:
+                self.c.capture_stopped_signal.emit()
+                self.quit()
+                return
+            filepath = self._snapshot()
+            self.c.snapshot_done_signal.emit(filepath)
 
-        self.encode_options = None
         self.quit()
     
+    def quit(self):
+        self.encode_options = None
+        super().quit()
+    
+    def delay_countdown(self):
+        if self.delay > 0:
+            delay = self.delay
+            st = time.time()
+            self.c.countdown_signal.emit(delay)
+            while delay > 0 and not self.halt:
+                passed = time.time()-st
+                if passed >= 1:
+                    delay -= 1
+                    self.c.countdown_signal.emit(delay)
+                    st = time.time()
+            
+        if self.halt:
+            return False
+        
+        return True
     def record(self):
         self.mode = "record"
         self.start()
@@ -882,7 +919,6 @@ class Capture(QThread):
         except subprocess.CalledProcessError as e:
             vidfile = None
 
-        self.c.encoding_done_signal.emit(vidfile)
         return vidfile
         
     def stop(self):
@@ -891,7 +927,8 @@ class Capture(QThread):
     def snapshot(self):
         self.UID = time.strftime("%Y%m%d-%H%M%S")
         self.capture_count = 0
-        return self._snapshot()
+        self.mode = "snapshot"
+        self.start()
 
     def snapshot_drawover(self, drawover_image_path):
         drawover_pixmap = QPixmap(drawover_image_path)
