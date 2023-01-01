@@ -52,9 +52,6 @@ class PyPeek(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
-        self.showing_settings = False
-        self.settings_width = 600
-        self.settings_height = 400
         self.minimum_header_width = 355
         self.minimum_header_height = 45
         self.minimum_body_height = 100
@@ -63,6 +60,7 @@ class PyPeek(QMainWindow):
 
         self.header_widget = self.create_header_widget()
         self.body_widget = self.create_body_widget()
+        self.settings_widget = self.create_settings_widget()
 
         # Main vertical layout
         self.main_layout = QVBoxLayout()
@@ -162,7 +160,7 @@ class PyPeek(QMainWindow):
 
         self.settings_button = PyPeek.create_button("", f"{dir_path}/icon/gear.png")
         # self.settings_button.setFixedSize(30, 30)
-        self.settings_button.clicked.connect(lambda : self.show_settings(not self.showing_settings))
+        self.settings_button.clicked.connect(lambda :self.settings_widget.show())
 
         self.close_button = PyPeek.create_button("", f"{dir_path}/icon/x.png")
         self.close_button.setIconSize(QSize(20, 20))
@@ -192,13 +190,12 @@ class PyPeek(QMainWindow):
         self.record_area_widget.setLayout(QVBoxLayout())
 
         self.info_widget = self.create_info_widget()
-        self.settings_widget = self.create_settings_widget()
 
         self.body_layout = QStackedLayout()
         self.body_layout.setContentsMargins(0, 0, 0, 0)
         self.body_layout.addWidget(self.record_area_widget)
         self.body_layout.addWidget(self.info_widget)
-        self.body_layout.addWidget(self.settings_widget)
+        # self.body_layout.addWidget(self.settings_widget)
         self.body_layout.setCurrentIndex(0)
 
         body_widget = QWidget()
@@ -251,13 +248,19 @@ class PyPeek(QMainWindow):
         self.settings_layout.addWidget(self.copyright_widget)
         
         settings_widget = QWidget()
-        settings_widget.setStyleSheet("QWidget {background-color: #3a3a3a; border: none;}")
+        settings_widget.setStyleSheet("QWidget {background-color: #3a3a3a; color: #fff; border: none;}")
         settings_widget.setLayout(self.settings_layout)
 
         scroll_area = QScrollArea()
         scroll_area.setStyleSheet("QScrollArea {background-color: #3a3a3a; border: none;}")
         scroll_area.setWidget(settings_widget)
         scroll_area.setWidgetResizable(True)
+
+        scroll_area.resize(600, 400)
+        scroll_area.setWindowModality(Qt.ApplicationModal)
+        scroll_area.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
+        scroll_area.setWindowTitle("Settings")
+        scroll_area.setWindowIcon(QIcon(f"{dir_path}/icon/peek.png"))
 
         return scroll_area
 
@@ -358,8 +361,7 @@ class PyPeek(QMainWindow):
         geo.setHeight(geo.height() - 51)
         region -= QRegion(geo, QRegion.RegionType.Rectangle)
         self.setMask(region)
-        if not self.showing_settings:
-            self.body_layout.setCurrentIndex(0)
+        self.body_layout.setCurrentIndex(0)
         self.show()
 
     def close_app(self):
@@ -367,6 +369,7 @@ class PyPeek(QMainWindow):
             self.capture.terminate()
             self.capture.clear_cache_files()
         self.save_settings()
+        self.settings_widget.close()
         self.close()
         self.destroy()
 
@@ -383,8 +386,8 @@ class PyPeek(QMainWindow):
         
     def snapshot(self):
         self.prepare_capture()
-        filepath = self.capture.snapshot()
         self.setVisible(False)
+        filepath = self.capture.snapshot()
         drawover = DrawOver(filepath)
         drawover_res = drawover.exec()
         self.setVisible(True)
@@ -392,8 +395,8 @@ class PyPeek(QMainWindow):
             self.end_capture()
             return
 
-        if drawover_res == 1 and drawover.drawover_image_path:
-            filepath = self.capture.snapshot_drawover(drawover.drawover_image_path)
+        if drawover_res == 1 and drawover.encode_options:
+            filepath = self.capture.snapshot_drawover(drawover.encode_options["drawover_image_path"])
             
         filename = os.path.basename(filepath)
         new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.expanduser("~") + "/" + filename, "Images (*.jpg)")
@@ -408,7 +411,6 @@ class PyPeek(QMainWindow):
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
         self.capture.width = self.record_area_widget.width()
         self.capture.height = self.record_area_widget.height()
-        self.set_grips_visibility(False)
         self.snapshot_button.setDisabled(True)
         self.record_button.setDisabled(True)
         self.record_button.setIconSize(QSize(0, 0))
@@ -429,7 +431,6 @@ class PyPeek(QMainWindow):
         self.fullscreen_button.setDisabled(False)
         self.settings_button.setDisabled(False)
         self.close_button.setDisabled(False)
-        self.set_grips_visibility(True)
         if not self.capture.fullscreen:
             self.block_resize_event = True
             self.setMaximumSize(16777215, 16777215) # remove fixed height
@@ -440,18 +441,22 @@ class PyPeek(QMainWindow):
 
     def create_grips(self):
         self.grip_br = QSizeGrip(self)
+        self.grip_br.setStyleSheet("background-color: transparent;")
         self.grip_br.resize(20, 20)
         self.grip_br.move(self.frame.width() - 20, self.frame.height() - 20)
 
         self.grip_bl = QSizeGrip(self)
+        self.grip_bl.setStyleSheet("background-color: transparent;")
         self.grip_bl.resize(20, 20)
         self.grip_bl.move(0, self.frame.height() - 20)
 
         self.grip_tr = QSizeGrip(self)
+        self.grip_tr.setStyleSheet("background-color: transparent;")
         self.grip_tr.resize(20, 20)
         self.grip_tr.move(self.frame.width() - 20, 0)
         
         self.grip_tl = QSizeGrip(self)
+        self.grip_tl.setStyleSheet("background-color: transparent;")
         self.grip_tl.resize(20, 20)
         self.grip_tl.move(0, 0)
 
@@ -461,10 +466,6 @@ class PyPeek(QMainWindow):
         self.grip_br.move(self.frame.width() - 20, self.frame.height() - 20)
         self.grip_bl.move(0, self.frame.height() - 20)
         self.grip_tr.move(self.frame.width() - 20, 0)
-
-    def set_grips_visibility(self, visible):
-        for grip in self.grips:
-            grip.setVisible(visible)
 
     def recording_done(self, cache_folder):
         self.setVisible(False)
@@ -535,29 +536,30 @@ class PyPeek(QMainWindow):
         self.block_resize_event = True
         self.timer.stop()
         if value:
-            self.body_layout.setCurrentIndex(2)
-            self.clearMask()
-            self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear-fill.png"))
-            self.record_button_grp.hide()
-            self.snapshot_button.hide()
-            self.fullscreen_button.hide()
-            if self.capture.fullscreen:
-                self.setMaximumSize(16777215, 16777215) # remove fixed height
-                self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
-            self.resize(self.settings_width, self.settings_height)
+            self.settings_widget.show()
+            # self.body_layout.setCurrentIndex(2)
+            # self.clearMask()
+            # self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear-fill.png"))
+            # self.record_button_grp.hide()
+            # self.snapshot_button.hide()
+            # self.fullscreen_button.hide()
+            # if self.capture.fullscreen:
+            #     self.setMaximumSize(16777215, 16777215) # remove fixed height
+            #     self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
+            # self.resize(self.settings_width, self.settings_height)
         else:
-            self.body_layout.setCurrentIndex(0)
-            self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear.png"))
-            self.record_button_grp.show()
-            self.snapshot_button.show()
-            self.fullscreen_button.show()
-            if self.capture.fullscreen:
-                self.setFixedSize(self.minimum_header_width, self.minimum_header_height)
-            else:
-                self.resize(self.record_width, self.record_height)
-            self.set_mask()
+            self.settings_widget.hide()
+            # self.body_layout.setCurrentIndex(0)
+            # self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear.png"))
+            # self.record_button_grp.show()
+            # self.snapshot_button.show()
+            # self.fullscreen_button.show()
+            # if self.capture.fullscreen:
+            #     self.setFixedSize(self.minimum_header_width, self.minimum_header_height)
+            # else:
+            #     self.resize(self.record_width, self.record_height)
+            # self.set_mask()
             
-        self.showing_settings = value
         self.block_resize_event = False
 
     def mousePressEvent(self, event):
@@ -579,6 +581,7 @@ class PyPeek(QMainWindow):
 
     def resizeEvent(self, event):
         self.frame.setGeometry(0, 0, event.size().width(), event.size().height())
+        self.resize_grips()
 
         if self.block_resize_event:
             return
@@ -588,20 +591,14 @@ class PyPeek(QMainWindow):
         # else:
         #     self.resize(self.width(), event.size().height())
             
-        if self.showing_settings:
-            self.settings_height = event.size().height()
-            self.settings_width = event.size().width()
-        else:
-            self.record_height = event.size().height()
-            self.record_width = event.size().width()
+        self.record_height = event.size().height()
+        self.record_width = event.size().width()
 
-            self.info_size_label.setText(f"{self.body_widget.width()}x{self.body_widget.height()}")
-            self.body_layout.setCurrentIndex(1)
+        self.info_size_label.setText(f"{self.body_widget.width()}x{self.body_widget.height()}")
+        self.body_layout.setCurrentIndex(1)
 
-            self.clearMask()
-            self.timer.start(1000)
-        
-        self.resize_grips()
+        self.clearMask()
+        self.timer.start(1000)
 
     @staticmethod
     def get_global_position(widget):

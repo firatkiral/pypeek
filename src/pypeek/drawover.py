@@ -17,7 +17,10 @@ class DrawOver(QDialog):
         super().__init__()
         self.setFocusPolicy(Qt.StrongFocus)
         # self.setWindowModality(Qt.ApplicationModal)
-        self.setStyleSheet("background-color: #333; color: #fff;")
+        self.setWindowFlags(Qt.Window)
+        self.setWindowTitle("Edit")
+        self.setWindowIcon(QIcon(f"{dir_path}/icon/peek.png"))
+        self.setStyleSheet("QDialog {background-color: #333; color: #fff;}")
 
         self.image_width = 800
         self.image_height = 600
@@ -58,6 +61,7 @@ class DrawOver(QDialog):
         self.current_color = "red"
         self.dragging = False
         self.current_text_item = None
+        self.slider = None
         self.current_pen = QPen(QColor(self.current_color), 2)
         self.current_brush = QBrush(QColor(self.current_color))
 
@@ -96,6 +100,7 @@ class DrawOver(QDialog):
         self.scene = QGraphicsScene(self)
         self.scene.addWidget(self.canvas_widget)
         self.view = QGraphicsView(self.scene)
+        self.view.setStyleSheet("QGraphicsView {background-color: #333; color: #fff;}")
         self.view.setRenderHint(QPainter.Antialiasing)
         self.view.setRenderHint(QPainter.SmoothPixmapTransform)
         self.view.setFocusPolicy(Qt.StrongFocus)
@@ -124,10 +129,10 @@ class DrawOver(QDialog):
         canvas_margin_layout.setContentsMargins(10,10,10,10)
         canvas_margin_layout.addWidget(self.view)
 
-        save_button = QPushButton("Save", self)
+        save_button = DrawOver.create_button("Save", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         save_button.setFixedWidth(100)
         save_button.clicked.connect(self.save_drawover_file)
-        cancel_button = QPushButton("Cancel", self)
+        cancel_button = DrawOver.create_button("Cancel")
         cancel_button.setFixedWidth(100)
         cancel_button.clicked.connect(self.reject)
         save_layout = QHBoxLayout()
@@ -268,7 +273,7 @@ class DrawOver(QDialog):
 
     def save_drawover_file(self):
         if len(self.items) > 0:
-            range = (self.slider.minimum(), self.slider.maximum() + 1)
+            range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
             drawover_image_path = os.path.join(self.out_path, self.out_filename)
             self.encode_options = {"drawover_image_path": drawover_image_path, "drawover_range":range }
             self.canvas_widget.hide()
@@ -318,26 +323,24 @@ class DrawOver(QDialog):
             pause_button.show() if x == QTimeLine.State.Running else pause_button.hide(),
         ))
 
-        play_button = QPushButton("")
+        play_button = DrawOver.create_button("", f"{dir_path}/icon/play-fill.png")
         play_button.setFixedWidth(30)
-        play_button.setIcon(QIcon(f"{dir_path}/icon/play-fill.png"))
         play_button.clicked.connect(lambda: (
             timeline.start() if self.slider.value() == self.slider.maximum() else timeline.resume(),
             play_button.hide(),
             pause_button.show()))
 
-        pause_button = QPushButton("")
+        pause_button = DrawOver.create_button("", f"{dir_path}/icon/pause.png")
         pause_button.setFixedWidth(30)
-        pause_button.setIcon(QIcon(f"{dir_path}/icon/pause.png"))
         pause_button.clicked.connect(lambda: (timeline.setPaused(True)))
         pause_button.hide()
 
-        stop_button = QPushButton("")
+        stop_button = DrawOver.create_button("", f"{dir_path}/icon/stop-fill.png")
         stop_button.setFixedWidth(30)
-        stop_button.setIcon(QIcon(f"{dir_path}/icon/stop-fill.png"))
         stop_button.clicked.connect(lambda: (timeline.stop(), timeline.setCurrentTime(0)))
 
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(2)
         button_layout.addWidget(play_button)
         button_layout.addWidget(pause_button)
         button_layout.addWidget(stop_button)
@@ -368,11 +371,12 @@ class DrawOver(QDialog):
         self.slider.valueChanged.connect(lambda : self.update_bg_image(self.image_filenames[self.slider.value()]))
 
         slider_layout = QHBoxLayout()
+        slider_layout.setSpacing(4)
         slider_layout.addLayout(button_layout, 0)
         slider_layout.addWidget(self.slider, 1)
 
         layout = QVBoxLayout()
-        layout.setSpacing(0)
+        layout.setSpacing(4)
         layout.addLayout(slider_layout)
         layout.addLayout(range_layout)
         timeline_widget = QWidget()
@@ -423,6 +427,7 @@ class DrawOver(QDialog):
         
     def create_shape_tool(self):
         menu = QMenu(self)
+        menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         menu.setContentsMargins(0, 5, 0, 5)
 
         menu_action = QAction(QIcon(f"{dir_path}/icon/slash-lg.png"), "", self)
@@ -449,7 +454,7 @@ class DrawOver(QDialog):
         for shape, icon in {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'square':'square', 'circle':'circle' }.items():
             shape_button = QPushButton(QIcon(f"{dir_path}/icon/{icon}.png"), "")
             shape_button.setFixedSize(54, 34)
-            shape_button.setIconSize(QSize(24, 24))
+            shape_button.setIconSize(QSize(18, 18))
             shape_button.setStyleSheet("QPushButton {background-color: transparent; } QPushButton:hover {background-color: #444; }")
             shape_button.clicked.connect(lambda *args, _shape=shape, _icon=icon: clicked(_shape, _icon))
             action_layout.addWidget(shape_button)
@@ -673,6 +678,21 @@ class DrawOver(QDialog):
             self.current_circle_item = None
         if self.current_tool == "text" and self.current_text_item is not None:
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
+
+    @staticmethod
+    def create_button(text="", icon=None, bgcolor= "#3e3e3e", hovercolor = "#494949", pressedcolor="#434343", callback=None):
+        btn = QPushButton(text)
+        btn.setStyleSheet(f"QPushButton {{ background-color: {bgcolor}; color: #fff; padding: 5px 10px; border-radius: 4px; border: 1px solid #434343;}} QPushButton:hover {{background-color: {hovercolor};}} QPushButton:pressed {{background-color: {pressedcolor};}}")
+        btn.setFixedHeight(30)
+        if icon:
+            btn.setIcon(QIcon(icon))
+            btn.setIconSize(QSize(20, 20))
+
+        if callback:
+            btn.clicked.connect(callback)
+
+        return btn
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
