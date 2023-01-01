@@ -47,6 +47,6 @@ exe = EXE(
 app = BUNDLE(
     exe,
     name='Peek.app',
-    icon='src/pypeek/icon/peek.ico',
+    icon='src/pypeek/icon/peek.icns',
     bundle_identifier=None,
 )

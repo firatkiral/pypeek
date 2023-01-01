@@ -12,4 +12,4 @@ python -m build
 
 python -m twine upload dist/*
 
-pyinstaller pypeek.spec -y
+pyinstaller pypeek-onefile.spec -y
