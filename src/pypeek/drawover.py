@@ -17,12 +17,13 @@ class DrawOver(QDialog):
         super().__init__()
         self.setFocusPolicy(Qt.StrongFocus)
         # self.setWindowModality(Qt.ApplicationModal)
+        self.setStyleSheet("background-color: #333; color: #fff;")
 
         self.image_width = 800
         self.image_height = 600
 
         self.is_sequence = False
-        self.drawover_image_path = None
+        self.encode_options = None
         self.out_filename = "drawover.png"
         self.out_path = f'{tempfile.gettempdir()}/pypeek'
         if os.path.isdir(image_path):
@@ -145,7 +146,16 @@ class DrawOver(QDialog):
         main_layout.addLayout(save_layout, 0)
 
         self.setLayout(main_layout)
-        self.resize(self.image_width + 40, self.image_height+220 if self.is_sequence else self.image_height+130)
+
+        window_width = self.image_width + 40
+        window_height = self.image_height+220 if self.is_sequence else self.image_height+130
+        screen_size = QGuiApplication.primaryScreen().size()
+        if window_width > screen_size.width():
+            window_width = screen_size.width() - 100
+        if window_height > screen_size.height():
+            window_height = screen_size.height() - 100
+
+        self.resize(window_width, window_height)
         self.set_tool("select")
 
     @Slot()
@@ -258,7 +268,9 @@ class DrawOver(QDialog):
 
     def save_drawover_file(self):
         if len(self.items) > 0:
-            self.drawover_image_path = os.path.join(self.out_path, self.out_filename)
+            range = (self.slider.minimum(), self.slider.maximum() + 1)
+            drawover_image_path = os.path.join(self.out_path, self.out_filename)
+            self.encode_options = {"drawover_image_path": drawover_image_path, "drawover_range":range }
             self.canvas_widget.hide()
             pixmap = QPixmap(self.canvas_width, self.canvas_height)
             pixmap.fill(Qt.transparent)
@@ -266,7 +278,7 @@ class DrawOver(QDialog):
             self.scene.render(painter)
             painter.end()
             self.canvas_widget.show()
-            pixmap.save(self.drawover_image_path, "png")
+            pixmap.save(drawover_image_path, "png")
 
         self.accept()
 
@@ -282,10 +294,10 @@ class DrawOver(QDialog):
         return canvas
 
     def create_timeline(self):
-        slider = QSlider(Qt.Horizontal)
-        slider.setRange(0, self.frame_count)
-        slider.valueChanged.connect(lambda x: (timeline.blockSignals(True),
-                                               timeline.setCurrentTime((x - slider.minimum()) * (1000/self.frame_rate)),
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setRange(0, self.frame_count)
+        self.slider.valueChanged.connect(lambda x: (timeline.blockSignals(True),
+                                               timeline.setCurrentTime((x - self.slider.minimum()) * (1000/self.frame_rate)),
                                                (timeline.stop(), timeline.resume()) if timeline.state() == QTimeLine.State.Running else None,
                                                timeline.blockSignals(False)
                                                ))
@@ -296,10 +308,10 @@ class DrawOver(QDialog):
         timeline.setLoopCount(1)
         timeline.setEasingCurve(QEasingCurve.Linear)
         timeline.frameChanged.connect(lambda x: (
-            slider.blockSignals(True),
-            slider.setValue(x),
-            self.update_bg_image(self.image_filenames[slider.value()]),
-            slider.blockSignals(False),
+            self.slider.blockSignals(True),
+            self.slider.setValue(x),
+            self.update_bg_image(self.image_filenames[self.slider.value()]),
+            self.slider.blockSignals(False),
             ))
         timeline.stateChanged.connect(lambda x: (
             play_button.hide() if x == QTimeLine.State.Running else play_button.show(),
@@ -310,7 +322,7 @@ class DrawOver(QDialog):
         play_button.setFixedWidth(30)
         play_button.setIcon(QIcon(f"{dir_path}/icon/play-fill.png"))
         play_button.clicked.connect(lambda: (
-            timeline.start() if slider.value() == slider.maximum() else timeline.resume(),
+            timeline.start() if self.slider.value() == self.slider.maximum() else timeline.resume(),
             play_button.hide(),
             pause_button.show()))
 
@@ -336,15 +348,15 @@ class DrawOver(QDialog):
         range_slider.setMax(self.frame_count)
         range_slider.setRange(0, self.frame_count)
         range_slider.startValueChanged.connect(lambda x: (
-            slider.setMinimum(x),
+            self.slider.setMinimum(x),
             timeline.blockSignals(True),
-            timeline.setCurrentTime((slider.value() - x) * (1000/self.frame_rate)),
+            timeline.setCurrentTime((self.slider.value() - x) * (1000/self.frame_rate)),
             timeline.blockSignals(False),
             timeline.setFrameRange(x, range_slider.end()),
             timeline.setDuration((range_slider.end() - x) * (1000/self.frame_rate))
             ))
         range_slider.endValueChanged.connect(lambda x: (
-            slider.setMaximum(x),
+            self.slider.setMaximum(x),
             timeline.setFrameRange(range_slider.start(), x),
             timeline.setDuration((x - range_slider.start()) * (1000/self.frame_rate))
             ))
@@ -353,11 +365,11 @@ class DrawOver(QDialog):
         range_layout.setStackingMode(QStackedLayout.StackAll)
         range_layout.addWidget(range_slider)
 
-        slider.valueChanged.connect(lambda : self.update_bg_image(self.image_filenames[slider.value()]))
+        self.slider.valueChanged.connect(lambda : self.update_bg_image(self.image_filenames[self.slider.value()]))
 
         slider_layout = QHBoxLayout()
         slider_layout.addLayout(button_layout, 0)
-        slider_layout.addWidget(slider, 1)
+        slider_layout.addWidget(self.slider, 1)
 
         layout = QVBoxLayout()
         layout.setSpacing(0)

@@ -15,6 +15,7 @@ add_paths()
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     dir_path = sys._MEIPASS
+    # dir_path = os.path.abspath(os.path.dirname(sys.executable))
 elif __file__:
     dir_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -79,8 +80,7 @@ class PyPeek(QMainWindow):
         self.installEventFilter(self)
 
         # For win, right bottom corner resize handle
-        self.grip = QSizeGrip(self)
-        self.grip.resize(20, 20)
+        self.create_grips()
 
         self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint)
         self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
@@ -384,9 +384,17 @@ class PyPeek(QMainWindow):
     def snapshot(self):
         self.prepare_capture()
         filepath = self.capture.snapshot()
+        self.setVisible(False)
         drawover = DrawOver(filepath)
-        if drawover.exec() == 1 and drawover.drawover_image_path:
+        drawover_res = drawover.exec()
+        self.setVisible(True)
+        if drawover_res == 0:
+            self.end_capture()
+            return
+
+        if drawover_res == 1 and drawover.drawover_image_path:
             filepath = self.capture.snapshot_drawover(drawover.drawover_image_path)
+            
         filename = os.path.basename(filepath)
         new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.expanduser("~") + "/" + filename, "Images (*.jpg)")
         
@@ -394,12 +402,13 @@ class PyPeek(QMainWindow):
             shutil.move(filepath, new_filepath[0])
         
         self.end_capture()
+        drawover.deleteLater()
     
     def prepare_capture(self):
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
         self.capture.width = self.record_area_widget.width()
         self.capture.height = self.record_area_widget.height()
-        self.grip.hide()
+        self.set_grips_visibility(False)
         self.snapshot_button.setDisabled(True)
         self.record_button.setDisabled(True)
         self.record_button.setIconSize(QSize(0, 0))
@@ -420,7 +429,7 @@ class PyPeek(QMainWindow):
         self.fullscreen_button.setDisabled(False)
         self.settings_button.setDisabled(False)
         self.close_button.setDisabled(False)
-        self.grip.show()
+        self.set_grips_visibility(True)
         if not self.capture.fullscreen:
             self.block_resize_event = True
             self.setMaximumSize(16777215, 16777215) # remove fixed height
@@ -429,13 +438,45 @@ class PyPeek(QMainWindow):
             self.block_resize_event = False
         self.capture.clear_cache_files()
 
+    def create_grips(self):
+        self.grip_br = QSizeGrip(self)
+        self.grip_br.resize(20, 20)
+        self.grip_br.move(self.frame.width() - 20, self.frame.height() - 20)
+
+        self.grip_bl = QSizeGrip(self)
+        self.grip_bl.resize(20, 20)
+        self.grip_bl.move(0, self.frame.height() - 20)
+
+        self.grip_tr = QSizeGrip(self)
+        self.grip_tr.resize(20, 20)
+        self.grip_tr.move(self.frame.width() - 20, 0)
+        
+        self.grip_tl = QSizeGrip(self)
+        self.grip_tl.resize(20, 20)
+        self.grip_tl.move(0, 0)
+
+        self.grips = [self.grip_br, self.grip_bl, self.grip_tr, self.grip_tl]
+    
+    def resize_grips(self):
+        self.grip_br.move(self.frame.width() - 20, self.frame.height() - 20)
+        self.grip_bl.move(0, self.frame.height() - 20)
+        self.grip_tr.move(self.frame.width() - 20, 0)
+
+    def set_grips_visibility(self, visible):
+        for grip in self.grips:
+            grip.setVisible(visible)
+
     def recording_done(self, cache_folder):
+        self.setVisible(False)
         drawover = DrawOver(cache_folder)
-        if drawover.exec() == 0:
+        drawover_res = drawover.exec()
+        self.setVisible(True)
+        if drawover_res == 0:
             self.end_capture()
             return
-        
-        self.capture.encode(drawover.drawover_image_path)
+
+        self.capture.encode(drawover.encode_options)
+        drawover.deleteLater()
 
     def encoding_done(self, filepath):
         if filepath:
@@ -560,7 +601,7 @@ class PyPeek(QMainWindow):
             self.clearMask()
             self.timer.start(1000)
         
-        self.grip.move(self.frame.width() - 20, self.frame.height() - 20)
+        self.resize_grips()
 
     @staticmethod
     def get_global_position(widget):
@@ -727,7 +768,7 @@ class Capture(QThread):
     def __init__(self, app):
         super().__init__()
         self.mode = "record" # record, encode
-        self.drawover_image_path = None
+        self.encode_options = None
         self.fullscreen = False
         self.show_cursor = True
         self.cursor_image = QPixmap(f"{dir_path}/icon/cursor.png").scaled(28, 28, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -735,6 +776,7 @@ class Capture(QThread):
         self.pos_y = 0
         self.width = 0
         self.height = 0
+        self.range = None
         self.UID = ""
         self.capture_count = 0
         self.halt = False
@@ -798,26 +840,27 @@ class Capture(QThread):
             self.stop_capture_time = time.time()
             self.c.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
-            if self.drawover_image_path:
+            if self.encode_options:
                 self._drawover()
-                self.drawover_image_path = None
             self.encode_video()
-        
+
+        self.encode_options = None
         self.quit()
     
     def record(self):
         self.mode = "record"
         self.start()
 
-    def encode(self, drawover_image_path=None):
+    def encode(self, encode_options=None):
         self.mode = "encode"
-        self.drawover_image_path = drawover_image_path
+        self.encode_options = encode_options
         self.start()
     
     def _drawover(self):
-        drawover_pixmap = QPixmap(self.drawover_image_path)
+        drawover_pixmap = QPixmap(self.encode_options["drawover_image_path"])
         pos = QPoint()
-        for i in range(self.capture_count):
+        rng = self.encode_options["drawover_range"] or (0, self.capture_count)
+        for i in range(*rng):
             filename = f'{self.current_cache_folder}/peek_{self.UID}_{str(i).zfill(6)}.jpg'
             pixmap = QPixmap(filename)
             painter = QPainter(pixmap)
@@ -826,11 +869,15 @@ class Capture(QThread):
             pixmap.save(filename, "jpg")
 
     def encode_video(self):
+        start_number = 0 if self.encode_options is None else self.encode_options["drawover_range"][0]
+        vframes = self.capture_count if self.encode_options is None else self.encode_options["drawover_range"][1] - self.encode_options["drawover_range"][0]
         fprefix = (f'{self.current_cache_folder}/peek_{self.UID}_')
         fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
         vidfile = f"{self.current_cache_folder}/peek_{self.UID}.{self.v_ext}"
         systemcall = str(self.ffmpeg_bin)+" -r " + str(fps) + " -y"
+        systemcall += " -start_number " + str(start_number)
         systemcall += " -i " + str(fprefix)+"%"+str(self.fmt)+".jpg"
+        systemcall += " -vframes " + str(vframes)
         systemcall += " "+self.ffmpeg_flags[self.v_ext + self.quality]
         systemcall += " "+str(vidfile)
         try:
