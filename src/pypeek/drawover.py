@@ -386,6 +386,7 @@ class DrawOver(QDialog):
 
     def create_color_tool(self):
         menu = QMenu(self)
+        menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         menu.setContentsMargins(10, 5, 10, 5)
 
         menu_action = QPushButton("", self)
