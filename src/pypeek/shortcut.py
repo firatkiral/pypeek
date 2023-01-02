@@ -7,8 +7,8 @@ elif __file__:
 desktop_path = os.path.expanduser("~/Desktop")
 
 def win():
-    shortcut_name = "Peek"
-    icon_path = f"{dir_path}/icon/peek.ico"
+    shortcut_name = "pypeek"
+    icon_path = f"{dir_path}/icon/pypeek.ico"
     shortcut_path = os.path.join(desktop_path, shortcut_name + ".lnk")
 
     script = f'''
@@ -37,8 +37,8 @@ def mac():
         end tell 
         '''
 
-    subprocess.run(["osacompile", "-o", f"{desktop_path}/Peek.app", "-e", script])
-    shutil.copy(f"{dir_path}/icon/peek.icns", f"{desktop_path}/peek.app/Contents/Resources/applet.icns")
+    subprocess.run(["osacompile", "-o", f"{desktop_path}/pypeek.app", "-e", script])
+    shutil.copy(f"{dir_path}/icon/pypeek.icns", f"{desktop_path}/pypeek.app/Contents/Resources/applet.icns")
 
 def create_shortcut():
     if platform.system() == 'Windows':

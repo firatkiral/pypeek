@@ -29,7 +29,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='Peek',
+    name='PyPeek',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -42,11 +42,11 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['src/pypeek/icon/peek.ico'],
+    icon=['src/pypeek/icon/pypeek.ico'],
 )
 app = BUNDLE(
     exe,
-    name='Peek.app',
-    icon='src/pypeek/icon/peek.icns',
+    name='PyPeek.app',
+    icon='src/pypeek/icon/pypeek.icns',
     bundle_identifier=None,
 )

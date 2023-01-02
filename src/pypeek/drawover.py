@@ -13,13 +13,13 @@ elif __file__:
     dir_path = os.path.abspath(os.path.dirname(__file__))
 
 class DrawOver(QDialog):
-    def __init__(self, image_path=""):
-        super().__init__()
+    def __init__(self, image_path="", options=None, parent=None):
+        super().__init__(parent)
         self.setFocusPolicy(Qt.StrongFocus)
         # self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle("Edit")
-        self.setWindowIcon(QIcon(f"{dir_path}/icon/peek.png"))
+        self.setWindowIcon(QIcon(f"{dir_path}/icon/pypeek.png"))
         self.setStyleSheet("QDialog {background-color: #333; color: #fff;}")
 
         self.image_width = 800
@@ -57,17 +57,17 @@ class DrawOver(QDialog):
         redo_shortcut.activated.connect(self.undo_history.redo)
 
         # Variables
-        self.current_color = "red"
-        self.current_width = 2
-        self.current_shape_color = "red"
-        self.current_shape_width = 2
-        self.current_text_color = "red"
-        self.font_size = 13
+        self.pen_color = options["pen_color"] if options else "yellow"
+        self.pen_width = options["pen_width"] if options else 2
+        self.shape_color = options["shape_color"] if options else "yellow"
+        self.shape_width = options["shape_width"] if options else 2
+        self.text_color = options["text_color"] if options else "white"
+        self.text_size = options["text_size"] if options else 13
         self.dragging = False
         self.current_text_item = None
         self.slider = None
-        self.current_pen = QPen(QColor(self.current_color), self.current_width)
-        self.current_brush = QBrush(QColor(self.current_color))
+        self.current_pen = QPen(QColor(self.pen_color), self.pen_width)
+        self.current_brush = QBrush(QColor(self.pen_color))
 
         self.items = []
         self.arrow_polygon = QPolygon([QPoint(0,0), QPoint(-10,5),QPoint(-10,-5)])
@@ -166,6 +166,7 @@ class DrawOver(QDialog):
 
         self.resize(window_width, window_height)
         self.set_tool("select")
+        self.update_brush_params()
         self.setFocus()
 
     @Slot()
@@ -241,18 +242,18 @@ class DrawOver(QDialog):
         # Set up the color picker
         self.color_picker = self.create_color_tool()
         self.color_picker.setToolTip("Color Picker")
-        toolbar.addWidget(self.color_picker)
+        toolbar.addAction(self.color_picker)
 
         # add separator
-        toolbar.addSeparator()
+        self.separator1 = toolbar.addSeparator()
 
         # set up size picker
         self.width_tool = self.create_width_tool()
-        self.width_tool.setToolTip("Size Picker")
-        toolbar.addWidget(self.width_tool)
+        self.width_tool.setToolTip("Brush / Text Size")
+        toolbar.addAction(self.width_tool)
 
         # add separator
-        toolbar.addSeparator()
+        self.separator2 = toolbar.addSeparator()
 
         # add zoom tools
         self.zoom_in_tool = QAction(QIcon(f"{dir_path}/icon/zoom-in.png"), "", self)
@@ -412,7 +413,7 @@ class DrawOver(QDialog):
         # icon_widget.setFixedSize(20, 20)
 
         self.color_menu_button = QPushButton("", self)
-        self.color_menu_button.setStyleSheet(f"QPushButton {{background-color: {self.current_color}; border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
+        self.color_menu_button.setStyleSheet(f"QPushButton {{background-color: {self.pen_color}; border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
         self.color_menu_button.setFixedSize(24, 24)
         self.color_menu_button.setMenu(menu)
 
@@ -427,7 +428,7 @@ class DrawOver(QDialog):
 
         menu.addAction(action)
 
-        def clicked(_color=None):
+        def clicked(_color):
             self.pick_color(_color)
             menu.close()
 
@@ -454,7 +455,10 @@ class DrawOver(QDialog):
         color_widget = QWidget()
         color_widget.setLayout(hbox)
 
-        return color_widget
+        color_picker_action = QWidgetAction(self)
+        color_picker_action.setDefaultWidget(color_widget)
+
+        return color_picker_action
 
     def create_width_tool(self):
         icon = QPixmap(f"{dir_path}/icon/line-width.png")
@@ -478,8 +482,11 @@ class DrawOver(QDialog):
 
         width_widget = QWidget()
         width_widget.setLayout(hbox)
+
+        width_widget_action = QWidgetAction(self)
+        width_widget_action.setDefaultWidget(width_widget)
         
-        return width_widget
+        return width_widget_action
 
     def create_shape_tool(self):
         menu = QMenu(self)
@@ -538,29 +545,10 @@ class DrawOver(QDialog):
             self.set_select_tool()
 
         self.update_brush_params()
-
+    
     def set_select_tool(self):
         self.current_tool = "select"
-    
-    def update_brush_params(self):
-        color = None
-        width = None
-        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
-            color = self.current_shape_color
-            width = self.current_shape_width
-        elif self.current_tool == "text":
-            color = self.current_text_color
-            width = self.font_size
-        else:
-            color = self.current_color
-            width = self.current_width
 
-        self.current_pen.setColor(color)
-        self.current_pen.setWidth(width)
-        self.current_pen.setColor(color)
-        self.width_spinner.setValue(width)
-        self.color_menu_button.setStyleSheet(f"QPushButton {{background-color: {color};border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
-    
     def set_pen_tool(self):
         self.current_tool = "pen"
 
@@ -582,22 +570,55 @@ class DrawOver(QDialog):
     def set_text_tool(self):
         self.current_tool = "text"
 
-    def pick_color(self, color=None):
+    def update_brush_params(self):
+        color = None
+        width = None
         if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
-            self.current_shape_color = color or QColorDialog.getColor(self.current_color).name()
+            color = self.shape_color
+            width = self.shape_width
         elif self.current_tool == "text":
-            self.current_text_color = color or QColorDialog.getColor(self.current_text_color).name()
+            color = self.text_color
+            width = self.text_size
         else:
-            self.current_color = color or QColorDialog.getColor(self.current_color).name()
+            color = self.pen_color
+            width = self.pen_width
+
+        self.current_pen.setColor(color)
+        self.current_pen.setWidth(width)
+        self.current_brush.setColor(color)
+        self.width_spinner.blockSignals(True)
+        self.width_spinner.setValue(width)
+        self.width_spinner.blockSignals(False)
+        self.color_menu_button.setStyleSheet(f"QPushButton {{background-color: {color};border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
+
+        if self.current_tool == "select":
+            self.color_picker.setVisible(False)
+            self.width_tool.setVisible(False)
+            self.separator1.setVisible(False)
+            self.separator2.setVisible(False)
+        else:
+            self.color_picker.setVisible(True)
+            self.width_tool.setVisible(True)
+            self.separator1.setVisible(True)
+            self.separator2.setVisible(True)
+    
+    
+    def pick_color(self, color):
+        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
+            self.shape_color = color
+        elif self.current_tool == "text":
+            self.text_color = color
+        else:
+            self.pen_color = color
         self.update_brush_params()
 
     def set_brush_width(self, width):
         if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
-            self.current_shape_width = width
+            self.shape_width = width
         elif self.current_tool == "text":
-            self.font_size = width
+            self.text_size = width
         else:
-            self.current_width = width
+            self.pen_width = width
         self.update_brush_params()
 
     def _mousePressEvent(self, e):
@@ -677,12 +698,12 @@ class DrawOver(QDialog):
                 return
             text_input = QTextEdit()
             font = text_input.currentFont()
-            font.setPointSize(self.font_size)
+            font.setPointSize(self.text_size)
             text_input.setFont(font)
             text_input.setUndoRedoEnabled(False)
             text_input.setUndoRedoEnabled(False)
             text_input.setFixedSize(60, 30)
-            text_input.setStyleSheet(f"background-color: rgba(0,0,0,0.30); color:{self.current_text_color};")
+            text_input.setStyleSheet(f"background-color: rgba(0,0,0,0.30); color:{self.text_color};")
 
             self.current_text_item = QWidget()
             self.current_text_item.setStyleSheet("background-color: transparent;")
