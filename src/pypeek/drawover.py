@@ -162,6 +162,7 @@ class DrawOver(QDialog):
 
         self.resize(window_width, window_height)
         self.set_tool("select")
+        self.setFocus()
 
     @Slot()
     def zoom_in(self):
@@ -190,7 +191,8 @@ class DrawOver(QDialog):
         # Create a toolbar and add it to the main window
         toolbar = QToolBar()
         toolbar.setMovable(False)
-        toolbar.setFixedHeight(30)
+        toolbar.setFixedHeight(40)
+        toolbar.setContentsMargins(10,0,0,0)
 
         tool_button_group = QActionGroup(self)
 
@@ -236,6 +238,14 @@ class DrawOver(QDialog):
         self.color_picker = self.create_color_tool()
         self.color_picker.setToolTip("Color Picker")
         toolbar.addWidget(self.color_picker)
+
+        # add separator
+        toolbar.addSeparator()
+
+        # set up size picker
+        self.width_tool = self.create_width_tool()
+        self.width_tool.setToolTip("Size Picker")
+        toolbar.addWidget(self.width_tool)
 
         # add separator
         toolbar.addSeparator()
@@ -387,12 +397,20 @@ class DrawOver(QDialog):
     def create_color_tool(self):
         menu = QMenu(self)
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
-        menu.setContentsMargins(10, 5, 10, 5)
+        # menu.setContentsMargins(10, 5, 10, 5)
 
-        menu_action = QPushButton("", self)
-        menu_action.setStyleSheet(f"QPushButton {{background-color: {self.current_color};}} QPushButton::menu-indicator {{image: none;}}")
-        menu_action.setFixedSize(20, 20)
-        menu_action.setMenu(menu)
+        icon = QPixmap(f"{dir_path}/icon/color-palette.png")
+        icon = icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.FastTransformation)
+        icon_widget = QLabel()
+        # icon_widget.setContentsMargins(0, 0, 0, 0)
+        icon_widget.setPixmap(icon)
+        icon_widget.setStyleSheet("QLabel {border-radius: 5px;}")
+        # icon_widget.setFixedSize(20, 20)
+
+        color_menu_button = QPushButton("", self)
+        color_menu_button.setStyleSheet(f"QPushButton {{background-color: {self.current_color};border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
+        color_menu_button.setFixedSize(24, 24)
+        color_menu_button.setMenu(menu)
 
         action = QWidgetAction(menu)
         action_layout = QGridLayout()
@@ -407,13 +425,13 @@ class DrawOver(QDialog):
 
         def clicked(_color=None):
             self.pick_color(_color)
-            menu_action.setStyleSheet(f"QPushButton {{background-color: {self.current_color};}} QPushButton::menu-indicator {{image: none;}}")
+            color_menu_button.setStyleSheet(f"QPushButton {{background-color: {self.current_color};}} QPushButton::menu-indicator {{image: none;}}")
             menu.close()
 
         for i, color in enumerate(['red', 'limegreen', 'blue', 'yellow', 'cyan', 'magenta', 'white', 'black']):
             color_button = QPushButton()
             color_button.setFixedSize(14, 14)
-            color_button.setStyleSheet(f"background-color: {color};")
+            color_button.setStyleSheet(f"background-color: {color}; border-radius: 2px;")
             color_button.clicked.connect(lambda *args, _color=color: clicked(_color))
             action_layout.addWidget(color_button, int(i/3), i%3)
         
@@ -424,8 +442,42 @@ class DrawOver(QDialog):
         action_layout.addWidget(pick_button, 2, 2)
         pick_button.clicked.connect(clicked)
 
-        return menu_action
+        hbox = QHBoxLayout()
+        hbox.setSpacing(3)
+        hbox.setContentsMargins(0, 0, 0, 0)
+        hbox.addWidget(icon_widget)
+        hbox.addWidget(color_menu_button)
+
+        color_widget = QWidget()
+        color_widget.setLayout(hbox)
+
+        return color_widget
+
+    def create_width_tool(self):
+        icon = QPixmap(f"{dir_path}/icon/line-width.png")
+        icon = icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.FastTransformation)
+        icon_widget = QLabel()
+        icon_widget.setPixmap(icon)
+
+        spinbox = QSpinBox()
+        spinbox.setAlignment(Qt.AlignRight)
+        spinbox.setFixedSize(50, 30)
+        # spinbox.setButtonSymbols(0x1)
+        spinbox.setRange(0, 100)
+        spinbox.setSingleStep(1)
+        spinbox.setValue(3)
+
+        hbox = QHBoxLayout()
+        hbox.setSpacing(0)
+        hbox.setContentsMargins(0, 0, 0, 0)
+        hbox.addWidget(icon_widget)
+        hbox.addWidget(spinbox)
+
+        width_widget = QWidget()
+        width_widget.setLayout(hbox)
         
+        return width_widget
+
     def create_shape_tool(self):
         menu = QMenu(self)
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")

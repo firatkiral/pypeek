@@ -482,7 +482,6 @@ class PyPeek(QMainWindow):
         self.stop_button.hide()
         self.setVisible(False)
         drawover = DrawOver(cache_folder)
-        drawover.setFocus()
         drawover_res = drawover.exec()
         self.setVisible(True)
         if drawover_res == 0:
