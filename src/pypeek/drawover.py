@@ -57,6 +57,8 @@ class DrawOver(QDialog):
         redo_shortcut.activated.connect(self.undo_history.redo)
 
         # Variables
+        self.current_tool = options["current_tool"] if options else "select"
+        self.current_shape = options["current_shape"] if options else "line"
         self.pen_color = options["pen_color"] if options else "yellow"
         self.pen_width = options["pen_width"] if options else 2
         self.shape_color = options["shape_color"] if options else "yellow"
@@ -165,7 +167,6 @@ class DrawOver(QDialog):
 
         self.resize(window_width, window_height)
         self.set_tool("select")
-        self.update_brush_params()
         self.setFocus()
 
     @Slot()
@@ -207,7 +208,6 @@ class DrawOver(QDialog):
         tool_button_group.addAction(self.select_tool)
         self.select_tool.triggered.connect(lambda: self.set_tool("select"))
         toolbar.addAction(self.select_tool)
-        self.select_tool.setChecked(True)
         
         self.pen_tool = QAction(QIcon(f"{dir_path}/icon/pencil.png"), "", self)
         self.pen_tool.setToolTip("Pen Tool")
@@ -220,7 +220,7 @@ class DrawOver(QDialog):
         self.shape_tool.setToolTip("Shape Tool")
         self.shape_tool.setCheckable(True)
         tool_button_group.addAction(self.shape_tool)
-        self.shape_tool.triggered.connect(lambda: self.set_tool(self.shape_tool.shape))
+        self.shape_tool.triggered.connect(lambda: self.set_tool(self.current_shape))
         toolbar.addAction(self.shape_tool)
 
         self.text_tool = QAction(QIcon(f"{dir_path}/icon/fonts.png"), "", self)
@@ -403,13 +403,11 @@ class DrawOver(QDialog):
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         # menu.setContentsMargins(10, 5, 10, 5)
 
-        icon = QPixmap(f"{dir_path}/icon/color-palette.png")
-        icon = icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.FastTransformation)
-        icon_widget = QLabel()
-        # icon_widget.setContentsMargins(0, 0, 0, 0)
-        icon_widget.setPixmap(icon)
-        icon_widget.setStyleSheet("QLabel {border-radius: 5px;}")
-        # icon_widget.setFixedSize(20, 20)
+        icon_widget = QPushButton()
+        icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
+        icon_widget.setIcon(QIcon(f"{dir_path}/icon/palette.png"))
+        icon_widget.setIconSize(QSize(26, 26))
 
         self.color_menu_button = QPushButton("", self)
         self.color_menu_button.setStyleSheet(f"QPushButton {{background-color: {self.pen_color}; border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
@@ -460,10 +458,11 @@ class DrawOver(QDialog):
         return color_picker_action
 
     def create_width_tool(self):
-        icon = QPixmap(f"{dir_path}/icon/line-width.png")
-        icon = icon.scaled(30, 30, Qt.KeepAspectRatio, Qt.FastTransformation)
-        icon_widget = QLabel()
-        icon_widget.setPixmap(icon)
+        icon_widget = QPushButton()
+        icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
+        icon_widget.setIcon(QIcon(f"{dir_path}/icon/line-width.png"))
+        icon_widget.setIconSize(QSize(26, 26))
 
         self.width_spinner = QSpinBox()
         self.width_spinner.setAlignment(Qt.AlignRight)
@@ -488,12 +487,12 @@ class DrawOver(QDialog):
         return width_widget_action
 
     def create_shape_tool(self):
+        shapes = {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'rectangle':'square', 'ellipse':'circle' }
         menu = QMenu(self)
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         menu.setContentsMargins(0, 5, 0, 5)
 
-        menu_action = QAction(QIcon(f"{dir_path}/icon/slash-lg.png"), "", self)
-        menu_action.shape = 'line'
+        menu_action = QAction(QIcon(f"{dir_path}/icon/{shapes[self.current_shape]}"), "", self)
         menu_action.setMenu(menu)
 
         action = QWidgetAction(menu)
@@ -507,13 +506,12 @@ class DrawOver(QDialog):
         menu.addAction(action)
 
         def clicked(_shape, _icon):
-            menu_action.shape = _shape
-            self.set_tool(_shape)
+            self.current_shape = _shape
             menu_action.setIcon(QIcon(f"{dir_path}/icon/{_icon}.png"))
-            menu_action.setChecked(True)
+            self.set_tool(_shape)
             menu.close()
 
-        for shape, icon in {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'square':'square', 'circle':'circle' }.items():
+        for shape, icon in shapes.items():
             shape_button = QPushButton(QIcon(f"{dir_path}/icon/{icon}.png"), "")
             shape_button.setFixedSize(54, 34)
             shape_button.setIconSize(QSize(18, 18))
@@ -534,10 +532,10 @@ class DrawOver(QDialog):
             self.set_arrow_tool()
         elif tool == "double_arrow":
             self.set_double_arrow_tool()
-        elif tool == "square":
-            self.set_square_tool()
-        elif tool == "circle":
-            self.set_circle_tool()
+        elif tool == "rectangle":
+            self.set_rectangle_tool()
+        elif tool == "ellipse":
+            self.set_ellipse_tool()
         elif tool == "text":
             self.set_text_tool()
         else:
@@ -547,32 +545,40 @@ class DrawOver(QDialog):
     
     def set_select_tool(self):
         self.current_tool = "select"
+        self.select_tool.setChecked(True)
 
     def set_pen_tool(self):
         self.current_tool = "pen"
+        self.pen_tool.setChecked(True)
 
     def set_line_tool(self):
         self.current_tool = "line"
+        self.shape_tool.setChecked(True)
     
     def set_arrow_tool(self):
         self.current_tool = "arrow"
+        self.shape_tool.setChecked(True)
 
     def set_double_arrow_tool(self):
         self.current_tool = "double_arrow"
+        self.shape_tool.setChecked(True)
     
-    def set_square_tool(self):
-        self.current_tool = "square"
+    def set_rectangle_tool(self):
+        self.current_tool = "rectangle"
+        self.shape_tool.setChecked(True)
     
-    def set_circle_tool(self):
-        self.current_tool = "circle"
+    def set_ellipse_tool(self):
+        self.current_tool = "ellipse"
+        self.shape_tool.setChecked(True)
 
     def set_text_tool(self):
         self.current_tool = "text"
+        self.text_tool.setChecked(True)
 
     def update_brush_params(self):
         color = None
         width = None
-        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
+        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "rectangle" or self.current_tool == "ellipse":
             color = self.shape_color
             width = self.shape_width
         elif self.current_tool == "text":
@@ -601,9 +607,8 @@ class DrawOver(QDialog):
             self.separator1.setVisible(True)
             self.separator2.setVisible(True)
     
-    
     def pick_color(self, color):
-        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
+        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "rectangle" or self.current_tool == "ellipse":
             self.shape_color = color
         elif self.current_tool == "text":
             self.text_color = color
@@ -612,7 +617,7 @@ class DrawOver(QDialog):
         self.update_brush_params()
 
     def set_brush_width(self, width):
-        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "square" or self.current_tool == "circle":
+        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "rectangle" or self.current_tool == "ellipse":
             self.shape_width = width
         elif self.current_tool == "text":
             self.text_size = width
@@ -686,18 +691,18 @@ class DrawOver(QDialog):
             self.current_double_arrow_line_item.addToGroup(arrow_item2)
 
             self.scene.addItem(self.current_double_arrow_line_item)
-        if self.current_tool == "square":
-            self.current_square_item = QGraphicsRectItem()
-            self.current_square_item.setPen(self.current_pen)
-            self.current_square_item.setBrush(Qt.NoBrush)
-            self.current_square_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
-            self.scene.addItem(self.current_square_item)
-        if self.current_tool == "circle":
-            self.current_circle_item = QGraphicsEllipseItem()
-            self.current_circle_item.setPen(self.current_pen)
-            self.current_circle_item.setBrush(Qt.NoBrush)
-            self.current_circle_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
-            self.scene.addItem(self.current_circle_item)
+        if self.current_tool == "rectangle":
+            self.current_rectangle_item = QGraphicsRectItem()
+            self.current_rectangle_item.setPen(self.current_pen)
+            self.current_rectangle_item.setBrush(Qt.NoBrush)
+            self.current_rectangle_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
+            self.scene.addItem(self.current_rectangle_item)
+        if self.current_tool == "ellipse":
+            self.current_ellipse_item = QGraphicsEllipseItem()
+            self.current_ellipse_item.setPen(self.current_pen)
+            self.current_ellipse_item.setBrush(Qt.NoBrush)
+            self.current_ellipse_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
+            self.scene.addItem(self.current_ellipse_item)
         if self.current_tool == "text":
             if self.current_text_item:
                 self.setFocus()
@@ -767,10 +772,10 @@ class DrawOver(QDialog):
             arrow.setRotation(atan2(dir.y(), dir.x()) * 180 / pi)
             arrow2 = self.current_double_arrow_line_item.childItems()[2]
             arrow2.setRotation(atan2(dir.y(), dir.x()) * 180 / pi + 180)
-        if self.current_tool == "square" and self.current_square_item is not None:
-            self.current_square_item.setRect(self.start_point.x(), self.start_point.y(), self.end_point.x() - self.start_point.x(), self.end_point.y() - self.start_point.y())
-        if self.current_tool == "circle" and self.current_circle_item is not None:
-            self.current_circle_item.setRect(self.start_point.x(), self.start_point.y(), self.end_point.x() - self.start_point.x(), self.end_point.y() - self.start_point.y())
+        if self.current_tool == "rectangle" and self.current_rectangle_item is not None:
+            self.current_rectangle_item.setRect(self.start_point.x(), self.start_point.y(), self.end_point.x() - self.start_point.x(), self.end_point.y() - self.start_point.y())
+        if self.current_tool == "ellipse" and self.current_ellipse_item is not None:
+            self.current_ellipse_item.setRect(self.start_point.x(), self.start_point.y(), self.end_point.x() - self.start_point.x(), self.end_point.y() - self.start_point.y())
     
     def _mouseReleaseEvent(self, e):
         if not self.dragging:
@@ -791,12 +796,12 @@ class DrawOver(QDialog):
         if self.current_tool == "double_arrow" and self.current_double_arrow_line_item is not None:
             self.undo_history.push(AddSceneItemCmd(self, self.current_double_arrow_line_item))
             self.current_double_arrow_line_item = None
-        if self.current_tool == "square" and self.current_square_item is not None:
-            self.undo_history.push(AddSceneItemCmd(self, self.current_square_item))
-            self.current_square_item = None
-        if self.current_tool == "circle" and self.current_circle_item is not None:
-            self.undo_history.push(AddSceneItemCmd(self, self.current_circle_item))
-            self.current_circle_item = None
+        if self.current_tool == "rectangle" and self.current_rectangle_item is not None:
+            self.undo_history.push(AddSceneItemCmd(self, self.current_rectangle_item))
+            self.current_rectangle_item = None
+        if self.current_tool == "ellipse" and self.current_ellipse_item is not None:
+            self.undo_history.push(AddSceneItemCmd(self, self.current_ellipse_item))
+            self.current_ellipse_item = None
         if self.current_tool == "text" and self.current_text_item is not None:
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
 

@@ -44,12 +44,15 @@ class PyPeek(QMainWindow):
         self.needs_restart = False
 
         # drawover settings
-        self.drawover_options = {'pen_color': 'yellow',
-                                 'pen_width': 2,
-                                 'shape_color': 'yellow',
-                                 'shape_width': 2,
-                                 'text_color': 'white',
-                                 'text_size': 13}
+        self.drawover_options = {
+            'current_tool': 'select',
+            'current_shape': 'line',
+            'pen_color': 'yellow',
+            'pen_width': 2,
+            'shape_color': 'yellow',
+            'shape_width': 2,
+            'text_color': 'white',
+            'text_size': 13}
 
         # load settings from json file
         self.load_settings()
@@ -294,6 +297,8 @@ class PyPeek(QMainWindow):
         self.pos_x = config.getint('capture', 'pos_x', fallback=100)
         self.pos_y = config.getint('capture', 'pos_y', fallback=100)
         self.check_update_on_startup = config.getboolean('capture', 'check_update_on_startup', fallback=True)
+        self.drawover_options['current_tool'] = config.get('drawover', 'current_color', fallback='select')
+        self.drawover_options['current_shape'] = config.get('drawover', 'current_shape', fallback='line')
         self.drawover_options['pen_color'] = config.get('drawover', 'pen_color', fallback='yellow')
         self.drawover_options['pen_width'] = config.getint('drawover', 'pen_width', fallback=2)
         self.drawover_options['shape_color'] = config.get('drawover', 'shape_color', fallback='yellow')
@@ -321,6 +326,8 @@ class PyPeek(QMainWindow):
             'check_update_on_startup': str(self.check_update_on_startup),
         }
         config['drawover'] = {
+            'current_tool': self.drawover_options['current_tool'],
+            'current_shape': self.drawover_options['current_shape'],
             'pen_color': self.drawover_options['pen_color'],
             'pen_width': str(self.drawover_options['pen_width']),
             'shape_color': self.drawover_options['shape_color'],
@@ -346,6 +353,8 @@ class PyPeek(QMainWindow):
         self.pos_y = 100
         self.check_update_on_startup = True
         self.drawover_options = {
+            'current_tool': "select",
+            'current_shape': "line",
             'pen_color': "yellow",
             'pen_width': 2,
             'shape_color': "yellow",
@@ -358,6 +367,8 @@ class PyPeek(QMainWindow):
     
     def update_drawover_settings(self, drawover):
         self.drawover_options = {
+            'current_tool': drawover.current_tool,
+            'current_shape': drawover.current_shape,
             'pen_color': drawover.pen_color,
             'pen_width': drawover.pen_width,
             'shape_color': drawover.shape_color,
