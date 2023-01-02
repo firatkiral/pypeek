@@ -303,7 +303,7 @@ class PyPeek(QMainWindow):
     
     def save_settings(self):
         home = os.path.expanduser('~')
-        config_file = os.path.join(home, '.peekconfig')
+        config_file = os.path.join(home, '.pypeekconfig')
         config = configparser.ConfigParser()
 
         config['capture'] = {

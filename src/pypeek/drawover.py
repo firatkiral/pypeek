@@ -66,15 +66,14 @@ class DrawOver(QDialog):
         self.dragging = False
         self.current_text_item = None
         self.slider = None
-        self.current_pen = QPen(QColor(self.pen_color), self.pen_width)
+        self.current_pen = QPen(QColor(self.pen_color), self.pen_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
         self.current_brush = QBrush(QColor(self.pen_color))
 
         self.items = []
-        self.arrow_polygon = QPolygon([QPoint(0,0), QPoint(-10,5),QPoint(-10,-5)])
+        self.arrow_polygon = QPolygon([QPoint(2, 0), QPoint(-10, 5), QPoint(-10, -5)])
         
         # Toolbar
         self.toolbar = self.create_toolbar()
-        # self.addToolBar(self.toolbar)
 
         # Canvas
         self.canvas_width = self.image_width
@@ -645,11 +644,15 @@ class DrawOver(QDialog):
             line_item.setPen(self.current_pen)
             line_item.setLine(self.start_point.x(), self.start_point.y(), self.start_point.x(), self.start_point.y())
 
+            tr =QTransform()
+            tr.scale(self.shape_width * .4, self.shape_width * .4)
+            arrow = self.arrow_polygon * tr
+
             arrow_item = QGraphicsPolygonItem()
             arrow_item.setPos(self.start_point)
             arrow_item.setPen(self.current_pen)
             arrow_item.setBrush(self.current_brush)
-            arrow_item.setPolygon(QPolygonF(self.arrow_polygon))
+            arrow_item.setPolygon(arrow)
 
             self.current_arrow_line_item = QGraphicsItemGroup()
             self.current_arrow_line_item.addToGroup(line_item)
@@ -661,17 +664,21 @@ class DrawOver(QDialog):
             line_item.setPen(self.current_pen)
             line_item.setLine(self.start_point.x(), self.start_point.y(), self.start_point.x(), self.start_point.y())
 
+            tr =QTransform()
+            tr.scale(self.shape_width * .4, self.shape_width * .4)
+            arrow = self.arrow_polygon * tr
+
             arrow_item = QGraphicsPolygonItem()
             arrow_item.setPos(self.start_point)
             arrow_item.setPen(self.current_pen)
             arrow_item.setBrush(self.current_brush)
-            arrow_item.setPolygon(QPolygonF(self.arrow_polygon))
+            arrow_item.setPolygon(arrow)
 
             arrow_item2 = QGraphicsPolygonItem()
             arrow_item2.setPos(self.start_point)
             arrow_item2.setPen(self.current_pen)
             arrow_item2.setBrush(self.current_brush)
-            arrow_item2.setPolygon(QPolygonF(self.arrow_polygon))
+            arrow_item2.setPolygon(QPolygonF(arrow))
 
             self.current_double_arrow_line_item = QGraphicsItemGroup()
             self.current_double_arrow_line_item.addToGroup(line_item)
