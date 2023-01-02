@@ -151,7 +151,9 @@ class DrawOver(QDialog):
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
         main_layout.addWidget(self.toolbar)
+        main_layout.addWidget(DrawOver.create_h_divider(2))
         main_layout.addLayout(canvas_margin_layout, 1)
+        main_layout.addWidget(DrawOver.create_h_divider(2))
         self.is_sequence and main_layout.addWidget(self.create_timeline(), 0)
         main_layout.addLayout(save_layout, 0)
 
@@ -193,11 +195,9 @@ class DrawOver(QDialog):
         self.undo_history.push(ClearSceneCmd(self))
 
     def create_toolbar(self):
-        # Create a toolbar and add it to the main window
         toolbar = QToolBar()
         toolbar.setMovable(False)
-        toolbar.setFixedHeight(40)
-        toolbar.setContentsMargins(10,0,0,0)
+        toolbar.setIconSize(QSize(50, 30))
 
         tool_button_group = QActionGroup(self)
 
@@ -222,6 +222,9 @@ class DrawOver(QDialog):
         tool_button_group.addAction(self.shape_tool)
         self.shape_tool.triggered.connect(lambda: self.set_tool(self.current_shape))
         toolbar.addAction(self.shape_tool)
+        shape_tool_button = toolbar.widgetForAction(self.shape_tool)
+        shape_tool_button.setAttribute(Qt.WA_StyledBackground, True)
+        shape_tool_button.setStyleSheet("QToolButton::menu-button { background-color: transparent; color: #aaa;}" )
 
         self.text_tool = QAction(QIcon(f"{dir_path}/icon/fonts.png"), "", self)
         self.text_tool.setToolTip("Text Tool")
@@ -269,7 +272,6 @@ class DrawOver(QDialog):
         self.reset_zoom_tool.setToolTip("Reset Zoom")
         self.reset_zoom_tool.triggered.connect(self.reset_zoom)
         toolbar.addAction(self.reset_zoom_tool)
-
 
         return toolbar
     
@@ -446,10 +448,13 @@ class DrawOver(QDialog):
         hbox = QHBoxLayout()
         hbox.setSpacing(3)
         hbox.setContentsMargins(0, 0, 0, 0)
+        hbox.addStretch()
         hbox.addWidget(icon_widget)
         hbox.addWidget(self.color_menu_button)
+        hbox.addStretch()
 
         color_widget = QWidget()
+        color_widget.setFixedWidth(100)
         color_widget.setLayout(hbox)
 
         color_picker_action = QWidgetAction(self)
@@ -470,15 +475,20 @@ class DrawOver(QDialog):
         self.width_spinner.setRange(0, 100)
         self.width_spinner.setSingleStep(1)
         self.width_spinner.setValue(3)
+        self.width_spinner.setAttribute(Qt.WA_StyledBackground, True)
+        self.width_spinner.setStyleSheet('background-color: #333;')
         self.width_spinner.valueChanged.connect(lambda : self.set_brush_width(self.width_spinner.value()))
 
         hbox = QHBoxLayout()
         hbox.setSpacing(0)
         hbox.setContentsMargins(0, 0, 0, 0)
+        hbox.addStretch()
         hbox.addWidget(icon_widget)
         hbox.addWidget(self.width_spinner)
+        hbox.addStretch()
 
         width_widget = QWidget()
+        width_widget.setFixedWidth(100)
         width_widget.setLayout(hbox)
 
         width_widget_action = QWidgetAction(self)
@@ -489,6 +499,7 @@ class DrawOver(QDialog):
     def create_shape_tool(self):
         shapes = {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'rectangle':'square', 'ellipse':'circle' }
         menu = QMenu(self)
+        menu.setAttribute(Qt.WA_StyledBackground, True)
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         menu.setContentsMargins(0, 5, 0, 5)
 
@@ -819,6 +830,12 @@ class DrawOver(QDialog):
 
         return btn
 
+    @staticmethod
+    def create_h_divider(thickness=2):
+        divider = QWidget()
+        divider.setFixedHeight(thickness)
+        divider.setStyleSheet("QWidget { background-color: #444; }")
+        return divider
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
