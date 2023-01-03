@@ -198,6 +198,70 @@ class DrawOver(QDialog):
         toolbar = QToolBar()
         toolbar.setMovable(False)
         toolbar.setIconSize(QSize(50, 30))
+        toolbar.setStyleSheet("""
+        QToolBar {
+            background-color: #333; 
+            color:#aaa; 
+            spacing: 3px; 
+            border: none;
+        } 
+        QToolBar #qt_toolbar_ext_button {
+        }
+        QMenu {
+            background-color: #333;
+        }
+        QMenu::item {
+            color: #aaa;
+            width: 60px;
+            text-align: center;
+        }
+        QMenu::item:selected {
+            background-color: #444;
+            color: #fff;
+        }
+        QMenu::icon {
+            position: absolute;
+            left: 20px;
+        }
+        QToolBar::separator {
+            background-color: #444; 
+            width: 1px;
+        } 
+        QToolButton {
+            background-color: #333; 
+            color: #aaa; 
+            border: none; 
+            padding: 5px; 
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            margin-top: 5px;
+        } 
+        QToolButton:hover {
+                background-color: #464646; 
+                color: #fff;
+        } 
+        QToolButton:pressed {
+            background-color: #484848; 
+            color: #fff;
+        } 
+        QToolButton:checked {
+            background-color: #444; 
+            color: #fff;
+        } 
+        QToolButton:disabled {
+            background-color: #333; 
+            color: #555;
+        }
+        QToolButton::menu-button {
+            width: 16px;
+        }
+        QToolButton::menu-arrow {
+            width: 14px; height: 14px;
+        }
+        QToolButton::menu-arrow:open {
+            top: 1px; left: 1px; /* shift it a bit */
+        }
+        """)
 
         tool_button_group = QActionGroup(self)
 
@@ -272,6 +336,14 @@ class DrawOver(QDialog):
         self.reset_zoom_tool.setToolTip("Reset Zoom")
         self.reset_zoom_tool.triggered.connect(self.reset_zoom)
         toolbar.addAction(self.reset_zoom_tool)
+
+        # toolbar_layout = QHBoxLayout()
+        # toolbar_layout.addWidget(toolbar)
+
+        # toolbar_widget = QWidget()
+        # toolbar_widget.setObjectName("toolbar")
+        # toolbar_widget.setStyleSheet("QWidget#toolbar {background-color: #333; color: #aaa;}")
+        # toolbar_widget.setLayout(toolbar_layout)
 
         return toolbar
     
@@ -409,7 +481,7 @@ class DrawOver(QDialog):
         icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
         icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
         icon_widget.setIcon(QIcon(f"{dir_path}/icon/palette.png"))
-        icon_widget.setIconSize(QSize(26, 26))
+        icon_widget.setIconSize(QSize(30, 30))
 
         self.color_menu_button = QPushButton("", self)
         self.color_menu_button.setStyleSheet(f"QPushButton {{background-color: {self.pen_color}; border-radius: 3px;}} QPushButton::menu-indicator {{image: none;}}")
@@ -454,7 +526,7 @@ class DrawOver(QDialog):
         hbox.addStretch()
 
         color_widget = QWidget()
-        color_widget.setFixedWidth(100)
+        color_widget.setFixedWidth(80)
         color_widget.setLayout(hbox)
 
         color_picker_action = QWidgetAction(self)
@@ -467,7 +539,7 @@ class DrawOver(QDialog):
         icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
         icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
         icon_widget.setIcon(QIcon(f"{dir_path}/icon/line-width.png"))
-        icon_widget.setIconSize(QSize(26, 26))
+        icon_widget.setIconSize(QSize(30, 30))
 
         self.width_spinner = QSpinBox()
         self.width_spinner.setAlignment(Qt.AlignRight)
@@ -475,7 +547,6 @@ class DrawOver(QDialog):
         self.width_spinner.setRange(0, 100)
         self.width_spinner.setSingleStep(1)
         self.width_spinner.setValue(3)
-        self.width_spinner.setAttribute(Qt.WA_StyledBackground, True)
         self.width_spinner.setStyleSheet('background-color: #333;')
         self.width_spinner.valueChanged.connect(lambda : self.set_brush_width(self.width_spinner.value()))
 
