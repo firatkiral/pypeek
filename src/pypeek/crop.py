@@ -27,6 +27,14 @@ class Crop(QMainWindow):
         self.size_label.setFixedSize(100, 30)
         self.size_label.hide()
         self.size_label.setStyleSheet("QLabel { color: #eee; }")
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(6)
+        shadow.setOffset(0, 0)
+        shadow.setColor(QColor("#000"))
+
+        self.size_label.setGraphicsEffect(shadow)
+
+        self.setGraphicsEffect(shadow)
 
         size_layout = QVBoxLayout()
         size_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -96,25 +104,25 @@ class Crop(QMainWindow):
     
     def create_grips(self):
         self.grip_br = QSizeGrip(self)
-        self.grip_br.setStyleSheet("background-color: rgba(33, 33, 33, .5); border-top-left-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
+        self.grip_br.setStyleSheet("background-color: rgba(220, 220, 220, .9); border-top-left-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
         # self.grip_br.setVisible(False)
         self.grip_br.resize(10, 10)
         self.grip_br.move(self.frame.width() - 10, self.frame.height() - 10)
 
         self.grip_bl = QSizeGrip(self)
-        self.grip_bl.setStyleSheet("background-color: rgba(33, 33, 33, .5);  border-top-right-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
+        self.grip_bl.setStyleSheet("background-color: rgba(220, 220, 220, .9);  border-top-right-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
         # self.grip_bl.setVisible(False)
         self.grip_bl.resize(10, 10)
         self.grip_bl.move(0, self.frame.height() - 10)
 
         self.grip_tr = QSizeGrip(self)
-        self.grip_tr.setStyleSheet("background-color: rgba(33, 33, 33, .5);  border-bottom-left-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
+        self.grip_tr.setStyleSheet("background-color: rgba(220, 220, 220, .9);  border-bottom-left-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
         # self.grip_tr.setVisible(False)
         self.grip_tr.resize(10, 10)
         self.grip_tr.move(self.frame.width() - 10, 0)
         
         self.grip_tl = QSizeGrip(self)
-        self.grip_tl.setStyleSheet("background-color: rgba(33, 33, 33, .5); border-bottom-right-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
+        self.grip_tl.setStyleSheet("background-color: rgba(220, 220, 220, .9); border-bottom-right-radius: 6px; border: 2px solid rgba(220, 220, 220, .9);")
         # self.grip_tl.setVisible(False)
         self.grip_tl.resize(10, 10)
         self.grip_tl.move(0, 0)
