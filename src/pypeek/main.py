@@ -570,7 +570,7 @@ class PyPeek(QMainWindow):
     def set_fullscreen(self, value=True):
         self.block_resize_event = True
         if value:
-            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/window.png"))
+            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/bounding-box-circles.png"))
             self.setFixedSize(self.minimum_header_width, self.minimum_header_height) # prevent manual resizing height
             self.clearMask()
         else:
