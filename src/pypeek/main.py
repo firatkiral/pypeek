@@ -984,7 +984,7 @@ class Capture(QThread):
             painter = QPainter(pixmap)
             painter.drawPixmap(pos, drawover_pixmap)
             painter.end()
-            pixmap.save(filename, "jpg")
+            pixmap.save(filename, "jpg", 100)
 
     def encode_video(self):
         start_number = 0 if self.encode_options is None else self.encode_options["drawover_range"][0]
@@ -1020,7 +1020,7 @@ class Capture(QThread):
         painter = QPainter(pixmap)
         painter.drawPixmap(QPoint(), drawover_pixmap)
         painter.end()
-        pixmap.save(filename, "jpg")
+        pixmap.save(filename, "jpg", 100)
         return filename
 
     def clear_cache_files(self):
@@ -1047,7 +1047,7 @@ class Capture(QThread):
         file_path = (f'{self.current_cache_folder}/pypeek_{self.UID}.jpg')
         file_path = file_path[:-4] + f'_{capture_count:06d}.jpg' if capture_count != None else file_path
 
-        screenshot.save(file_path, 'jpg')
+        screenshot.save(file_path, 'jpg', 100)
         return file_path
 
 class CheckUpdate(QThread):
