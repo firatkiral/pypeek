@@ -105,6 +105,7 @@ class PyPeek(QMainWindow):
         self.set_mask()
         self.capture.fullscreen and self.set_fullscreen()
         self.check_update_on_startup and self.check_update()
+        self.try_lock()
 
     def create_header_widget(self):
         self.snapshot_button = PyPeek.create_button("", f"{dir_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
@@ -429,6 +430,15 @@ class PyPeek(QMainWindow):
         self.needs_restart = True
         self.close_app()
     
+    def try_lock(self):
+        self.try_lock_thread = TryLock()
+        if self.try_lock_thread.try_lock():
+            # no other instance running, claer cache dir safely
+            self.capture.clear_cache_dir()
+        else:
+            # acquire lock as soon as other app closed so new instances can't remove cache dir
+            self.try_lock_thread.start()
+
     def check_update(self):
         if self.check_update_on_startup:
             self.update_mod = CheckUpdate()
@@ -571,11 +581,6 @@ class PyPeek(QMainWindow):
         self.show()
 
     def close_app(self):
-        if self.capture.isRunning():
-            self.capture.terminate()
-            self.capture.clear_cache_files()
-        self.save_settings()
-        self.settings_widget.close()
         self.close()
         self.destroy()
 
@@ -693,6 +698,15 @@ class PyPeek(QMainWindow):
 
         self.clearMask()
         self.timer.start(1000)
+
+    def closeEvent(self, event):
+        if self.capture.isRunning():
+            self.capture.terminate()
+            self.capture.clear_cache_files()
+        self.save_settings()
+        self.settings_widget.close()
+        
+        self.try_lock_thread.terminate()
 
     @staticmethod
     def get_global_position(widget):
@@ -1065,6 +1079,24 @@ class CheckUpdate(QThread):
             pass
             
         self.quit()
+
+class TryLock(QThread):
+    def __init__(self):
+        super().__init__()
+        self.c = Communicate()
+        self.lock_file = QLockFile(dir_path + "/pypeek.lock")
+
+    def run(self):
+        while True:
+            if self.lock_file.tryLock():
+                break
+
+            time.sleep(1)
+            
+        self.quit()
+    
+    def try_lock(self):
+        return self.lock_file.tryLock()
 
 def _show():
     not QApplication.instance() and QApplication(sys.argv)
