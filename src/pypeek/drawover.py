@@ -13,7 +13,7 @@ elif __file__:
     dir_path = os.path.abspath(os.path.dirname(__file__))
 
 class DrawOver(QDialog):
-    def __init__(self, image_path="", options=None, parent=None):
+    def __init__(self, image_path="", options=None, frame_rate=15, parent=None):
         super().__init__(parent)
         self.setFocusPolicy(Qt.StrongFocus)
         # self.setWindowModality(Qt.ApplicationModal)
@@ -37,7 +37,7 @@ class DrawOver(QDialog):
             self.bg_pixmap = QPixmap(os.path.join(image_path, self.image_filenames[0]))
             self.image_width = self.bg_pixmap.width()
             self.image_height = self.bg_pixmap.height()
-            self.frame_rate = 15
+            self.frame_rate = frame_rate
             self.frame_count = len(self.image_filenames) - 1
             self.duration = (float(self.frame_count) / self.frame_rate)*1000
         elif os.path.isfile(image_path):
