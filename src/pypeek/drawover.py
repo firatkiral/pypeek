@@ -905,8 +905,11 @@ class DrawOver(QDialog):
         divider.setStyleSheet("QWidget { background-color: #444; }")
         return divider
 
-if __name__ == "__main__":
+def show():
     app = QApplication(sys.argv)
     window = DrawOver()
     window.show()
     app.exec()
+
+if __name__ == "__main__":
+    show()
