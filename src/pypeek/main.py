@@ -23,13 +23,13 @@ class PyPeek(QMainWindow):
         # Settings
         self.capture = Capture(self)
 
-        self.capture.c.recording_done_signal.connect(self.recording_done)
-        self.capture.c.encoding_done_signal.connect(self.encoding_done)
-        self.capture.c.snapshot_done_signal.connect(self.snapshot_done)
-        self.capture.c.capture_stopped_signal.connect(self.end_capture_ui)
-        self.capture.c.countdown_signal.connect(self.update_countdown_ui)
-        self.capture.c.run_timer_signal.connect(self.update_timer_ui)
-        self.capture.c.hide_app_signal.connect(self.hide_app)
+        self.capture.recording_done_signal.connect(self.recording_done)
+        self.capture.encoding_done_signal.connect(self.encoding_done)
+        self.capture.snapshot_done_signal.connect(self.snapshot_done)
+        self.capture.capture_stopped_signal.connect(self.end_capture_ui)
+        self.capture.countdown_signal.connect(self.update_countdown_ui)
+        self.capture.run_timer_signal.connect(self.update_timer_ui)
+        self.capture.hide_app_signal.connect(self.hide_app)
 
         self.capture.show_cursor = True
         self.capture.fullscreen = True
@@ -440,7 +440,7 @@ class PyPeek(QMainWindow):
     def check_update(self):
         if self.check_update_on_startup:
             self.update_mod = CheckUpdate()
-            self.update_mod.c.update_check_done_signal.connect(self.do_update)
+            self.update_mod.update_check_done_signal.connect(self.do_update)
             self.update_mod.start()
     
     def do_update(self, latest_version):
@@ -859,21 +859,20 @@ class PyPeek(QMainWindow):
             msg.setCheckBox(checkbox)
 
         return msg.exec(), checkbox.isChecked() if checkbox else False
-
-class Communicate(QObject):
+    
+    
+class Capture(QThread):
     recording_done_signal = Signal(str)
     encoding_done_signal = Signal(str)
     snapshot_done_signal = Signal(str)
     countdown_signal = Signal(int)
     run_timer_signal = Signal(int)
-    update_check_done_signal = Signal(str)
     capture_stopped_signal = Signal()
     hide_app_signal = Signal()
-    
-class Capture(QThread):
+
     def __init__(self, app):
         super().__init__()
-        
+
         self.app = app
         self.mode = "record" # record, encode, snapshot
         self.encode_options = None
@@ -906,17 +905,15 @@ class Capture(QThread):
         self.delay = 0
         self.duration = 0
 
-        self.c = Communicate()
-
     def run(self):
         self.halt = False
         if self.mode == "record":
             self.delay_countdown()
             if self.halt:
-                self.c.capture_stopped_signal.emit()
+                self.capture_stopped_signal.emit()
                 self.quit()
                 return
-            self.c.hide_app_signal.emit()
+            self.hide_app_signal.emit()
             self.clear_cache_files()
             self.UID = time.strftime("%Y%m%d-%H%M%S")
             self.capture_count = 0
@@ -933,28 +930,28 @@ class Capture(QThread):
                 total_time = int(time.time()-self.start_capture_time)
                 if total_time > seconds:
                     seconds = total_time
-                    self.c.run_timer_signal.emit(seconds)
+                    self.run_timer_signal.emit(seconds)
                 if self.duration != 0 and total_time >= self.duration:
                     self.halt = True
 
             self.stop_capture_time = time.time()
             self.true_fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
-            self.c.recording_done_signal.emit(self.current_cache_folder)
+            self.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
             if self.encode_options and self.encode_options["drawover_image_path"]:
                 self._drawover()
             video_file = self.encode_video()
-            self.c.encoding_done_signal.emit(video_file)
+            self.encoding_done_signal.emit(video_file)
         elif self.mode == "snapshot":
             self.delay_countdown()
             if self.halt:
-                self.c.capture_stopped_signal.emit()
+                self.capture_stopped_signal.emit()
                 self.quit()
                 return
-            self.c.hide_app_signal.emit()
+            self.hide_app_signal.emit()
             time.sleep(.1)
             filepath = self._snapshot()
-            self.c.snapshot_done_signal.emit(filepath)
+            self.snapshot_done_signal.emit(filepath)
 
         self.quit()
     
@@ -966,12 +963,12 @@ class Capture(QThread):
         if self.delay > 0:
             delay = self.delay
             st = time.time()
-            self.c.countdown_signal.emit(delay)
+            self.countdown_signal.emit(delay)
             while delay > 0 and not self.halt:
                 passed = time.time()-st
                 if passed >= 1:
                     delay -= 1
-                    self.c.countdown_signal.emit(delay)
+                    self.countdown_signal.emit(delay)
                     st = time.time()
             
         if self.halt:
@@ -1067,16 +1064,16 @@ class Capture(QThread):
         return file_path
 
 class CheckUpdate(QThread):
+    update_check_done_signal = Signal(str) 
     def __init__(self):
         super().__init__()
-        self.c = Communicate()
 
     def run(self):
         try:
             response = requests.get("https://pypi.org/pypi/pypeek/json")
             if response.status_code == 200:
                 data = response.json()
-                self.c.update_check_done_signal.emit(data["info"]["version"])
+                self.update_check_done_signal.emit(data["info"]["version"])
         except:
             pass
             
@@ -1085,7 +1082,6 @@ class CheckUpdate(QThread):
 class TryLock(QThread):
     def __init__(self):
         super().__init__()
-        self.c = Communicate()
         self.lock_file = QLockFile(app_path + "/lock.file")
 
     def run(self):
