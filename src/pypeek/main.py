@@ -59,7 +59,7 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.7.2"
+        self.version = "2.7.3"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None

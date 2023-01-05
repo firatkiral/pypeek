@@ -43,24 +43,38 @@ MODIFIED_CSS = """
 QRangeSlider * {
     border: 0px;
     padding: 0px;
+    height: 0px;
+    width: 0px;
+    background: transparent;
 }
 QRangeSlider #Head {
-    background: #222;
+    border-top: 4px solid #2a2a2a;
+    background: transparent;
 }
-QRangeSlider #Span {
-    background: #464646;
+QRangeSlider #Span{
+    border-top: 4px solid #555;
+    background: transparent;
 }
-QRangeSlider #Span:active {
-    background: #444;
+QRangeSlider #Span:active  {
+    border-top: 2px solid #555;
+    background: transparent;
 }
 QRangeSlider #Tail {
-    background: #222;
+    border-top: 4px solid #2a2a2a;
+    background: transparent;
 }
 QRangeSlider > QSplitter::handle {
-    background: #999;
+    background: transparent;
+    width: 0px;
+    height: 0px;
+    border-top: 0px solid #555;
+    border-bottom: 14px solid #555;
+    border-right: 6px solid #333;
+    border-left: 6px solid #333;
 }
 QRangeSlider > QSplitter::handle:vertical {
-    height: 4px;
+    height: 20px;
+    width: 20px;
 }
 QRangeSlider > QSplitter::handle:pressed {
     background: #aaa;
@@ -105,9 +119,7 @@ class Ui_Form(object):
         QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
-        Form.setWindowTitle(QApplication.translate("QRangeSlider", 
-                                                         "QRangeSlider",
-                                                         None))
+        Form.setWindowTitle(QApplication.translate("QRangeSlider", "QRangeSlider", None))
 
 
 class Element(QGroupBox):
@@ -122,7 +134,7 @@ class Element(QGroupBox):
 
     def textColor(self):
         """text paint color"""
-        return getattr(self, '__textColor', QColor(125, 125, 125))
+        return getattr(self, '__textColor', QColor(125, 125, 125, 0))
 
     def setTextColor(self, color):
         """set the text paint color"""

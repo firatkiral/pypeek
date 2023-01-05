@@ -410,35 +410,35 @@ class DrawOver(QDialog):
             pause_button.show() if x == QTimeLine.State.Running else pause_button.hide(),
         ))
 
-        play_button = DrawOver.create_button("", f"{app_path}/icon/play-fill.png")
-        play_button.setFixedWidth(30)
+        play_button = DrawOver.create_button("", f"{app_path}/icon/play-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca")
+        play_button.setFixedSize(50, 40)
         play_button.clicked.connect(lambda: (
             timeline.start() if self.slider.value() == self.slider.maximum() else timeline.resume(),
             play_button.hide(),
             pause_button.show()))
 
-        pause_button = DrawOver.create_button("", f"{app_path}/icon/pause.png")
-        pause_button.setFixedWidth(30)
+        pause_button = DrawOver.create_button("", f"{app_path}/icon/pause.png", "#0d6efd", "#0b5ed7", "#0a58ca")
+        pause_button.setFixedSize(50, 40)
         pause_button.clicked.connect(lambda: (timeline.setPaused(True)))
         pause_button.hide()
 
         stop_button = DrawOver.create_button("", f"{app_path}/icon/stop-fill.png")
-        stop_button.setFixedWidth(30)
+        stop_button.setFixedSize(50, 40)
         stop_button.clicked.connect(lambda: (timeline.stop(), timeline.setCurrentTime(0)))
 
         button_layout = QHBoxLayout()
         button_layout.setSpacing(2)
         button_layout.addWidget(play_button)
         button_layout.addWidget(pause_button)
-        button_layout.addWidget(stop_button)
+        # button_layout.addWidget(stop_button)
 
         range_slider = QRangeSlider()
-        range_slider.setFixedHeight(30)
         range_slider.setMin(0)
         range_slider.setMax(self.frame_count)
         range_slider.setRange(0, self.frame_count)
         range_slider.startValueChanged.connect(lambda x: (
             self.slider.setMinimum(x),
+            self.slider.setValue(x),
             timeline.blockSignals(True),
             timeline.setCurrentTime((self.slider.value() - x) * (1000/self.frame_rate)),
             timeline.blockSignals(False),
@@ -447,20 +447,23 @@ class DrawOver(QDialog):
             ))
         range_slider.endValueChanged.connect(lambda x: (
             self.slider.setMaximum(x),
+            self.slider.setValue(x),
             timeline.setFrameRange(range_slider.start(), x),
             timeline.setDuration((x - range_slider.start()) * (1000/self.frame_rate))
             ))
 
-        range_layout = QStackedLayout()
-        range_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
+        range_layout = QVBoxLayout()
+        range_layout.setSpacing(4)
+        range_layout.setContentsMargins(0, 0, 0, 0)
+        range_layout.addWidget(self.slider)
         range_layout.addWidget(range_slider)
 
         self.slider.valueChanged.connect(lambda : self.update_bg_image(self.image_filenames[self.slider.value()]))
 
         slider_layout = QHBoxLayout()
-        slider_layout.setSpacing(4)
+        slider_layout.setSpacing(10)
         slider_layout.addLayout(button_layout, 0)
-        slider_layout.addWidget(self.slider, 1)
+        slider_layout.addLayout(range_layout, 1)
 
         layout = QVBoxLayout()
         layout.setSpacing(4)
