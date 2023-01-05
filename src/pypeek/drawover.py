@@ -3,7 +3,7 @@ from PySide6.QtWidgets import *
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtCore import Qt
-from math import radians, cos, sin, atan2, pi
+from math import atan2, pi
 from .undo import Undo, ClearSceneCmd, AddSceneItemCmd
 from .qrangeslider import QRangeSlider
 
@@ -397,7 +397,7 @@ class DrawOver(QDialog):
 
         timeline = QTimeLine(self.duration, parent=self)
         timeline.setFrameRange(0, len(self.image_filenames) - 1)
-        timeline.setUpdateInterval(1000/self.frame_rate)
+        timeline.setUpdateInterval(1000.0/self.frame_rate)
         timeline.setLoopCount(1)
         timeline.setEasingCurve(QEasingCurve.Linear)
         timeline.frameChanged.connect(lambda x: (

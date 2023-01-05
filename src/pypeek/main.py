@@ -511,7 +511,7 @@ class PyPeek(QMainWindow):
     def snapshot_done(self, filepath):
         self.setVisible(False)
         self.tray_icon.hide()
-        drawover = DrawOver(filepath, self.drawover_options, self.capture.fps, self)
+        drawover = DrawOver(filepath, self.drawover_options, self.capture.true_fps, self)
         drawover_res = drawover.exec()
         self.update_drawover_settings(drawover)
         self.setVisible(True)
@@ -540,7 +540,7 @@ class PyPeek(QMainWindow):
         self.stop_button.hide()
         self.setVisible(False)
         self.tray_icon.hide()
-        drawover = DrawOver(cache_folder, self.drawover_options, self.capture.fps, self)
+        drawover = DrawOver(cache_folder, self.drawover_options, self.capture.true_fps, self)
         drawover_res = drawover.exec()
         self.update_drawover_settings(drawover)
         self.setVisible(True)
@@ -889,6 +889,7 @@ class Capture(QThread):
                              "webmhi": '-crf 18 -b:v 0'}
         self.fmt = "06d"
         self.fps = 15
+        self.true_fps = 15 # Takes dropped / missed frames into account, otherwise it will play faster on drawover
         self.delay = 0
         self.duration = 0
 
@@ -924,6 +925,7 @@ class Capture(QThread):
                     self.halt = True
 
             self.stop_capture_time = time.time()
+            self.true_fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
             self.c.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
             if self.encode_options:
@@ -988,9 +990,8 @@ class Capture(QThread):
         start_number = 0 if self.encode_options is None else self.encode_options["drawover_range"][0]
         vframes = self.capture_count if self.encode_options is None else self.encode_options["drawover_range"][1] - self.encode_options["drawover_range"][0]
         fprefix = (f'{self.current_cache_folder}/pypeek_{self.UID}_')
-        fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
         vidfile = f"{self.current_cache_folder}/pypeek_{self.UID}.{self.v_ext}"
-        systemcall = str(self.ffmpeg_bin)+" -r " + str(fps) + " -y"
+        systemcall = str(self.ffmpeg_bin)+" -r " + str(self.true_fps) + " -y"
         systemcall += " -start_number " + str(start_number)
         systemcall += " -i " + str(fprefix)+"%"+str(self.fmt)+".jpg"
         systemcall += " -vframes " + str(vframes)
