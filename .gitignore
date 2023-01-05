@@ -7,3 +7,5 @@
 __pycache__
 lock.file
 bin
+.cache
+.pypeekconfig

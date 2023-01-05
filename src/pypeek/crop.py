@@ -4,10 +4,10 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    dir_path = sys._MEIPASS
+    app_path = sys._MEIPASS
     # dir_path = os.path.abspath(os.path.dirname(sys.executable))
 elif __file__:
-    dir_path = os.path.abspath(os.path.dirname(__file__))
+    app_path = os.path.abspath(os.path.dirname(__file__))
 
 class Crop(QMainWindow):
     def __init__(self):
@@ -45,7 +45,7 @@ class Crop(QMainWindow):
         size_widget.setLayout(size_layout)
 
         self.move_label = QLabel()
-        self.move_label.setPixmap(QPixmap(f"{dir_path}/icon/move.png"))
+        self.move_label.setPixmap(QPixmap(f"{app_path}/icon/move.png"))
         self.move_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.move_label.setFixedSize(55, 55)
         self.move_label.enterEvent = self.enter_event

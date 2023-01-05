@@ -11,10 +11,10 @@ __all__ = ['show']
 add_paths()
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    dir_path = sys._MEIPASS
+    app_path = sys._MEIPASS
     # dir_path = os.path.abspath(os.path.dirname(sys.executable))
 elif __file__:
-    dir_path = os.path.abspath(os.path.dirname(__file__))
+    app_path = os.path.abspath(os.path.dirname(__file__))
 
 class PyPeek(QMainWindow):
     def __init__(self):
@@ -59,7 +59,7 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.6.8"
+        self.version = "2.6.9"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -108,20 +108,20 @@ class PyPeek(QMainWindow):
         self.try_lock()
 
     def create_header_widget(self):
-        self.snapshot_button = PyPeek.create_button("", f"{dir_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
+        self.snapshot_button = PyPeek.create_button("", f"{app_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.snapshot_button.clicked.connect(self.snapshot)
 
-        self.record_button = PyPeek.create_button(f"{self.capture.v_ext.upper()}", f"{dir_path}/icon/record-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
+        self.record_button = PyPeek.create_button(f"{self.capture.v_ext.upper()}", f"{app_path}/icon/record-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.record_button.setFixedWidth(84)
         self.record_button.clicked.connect(self.record)
 
-        self.stop_button = PyPeek.create_button("0:00", f"{dir_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
+        self.stop_button = PyPeek.create_button("0:00", f"{app_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
         self.stop_button.clicked.connect(self.stop_capture)
         self.stop_button.setFixedWidth(114)
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
         self.stop_button.hide()
 
-        self.fullscreen_button = PyPeek.create_button("", f"{dir_path}/icon/display.png")
+        self.fullscreen_button = PyPeek.create_button("", f"{app_path}/icon/display.png")
         self.fullscreen_button.clicked.connect(lambda: self.set_fullscreen(not self.capture.fullscreen))
 
 
@@ -173,11 +173,11 @@ class PyPeek(QMainWindow):
 
         self.record_button_grp = PyPeek.make_group_button(self.record_button, self.menu_button)
 
-        self.settings_button = PyPeek.create_button("", f"{dir_path}/icon/gear.png")
+        self.settings_button = PyPeek.create_button("", f"{app_path}/icon/gear.png")
         # self.settings_button.setFixedSize(30, 30)
         self.settings_button.clicked.connect(lambda :self.settings_widget.show())
 
-        self.close_button = PyPeek.create_button("", f"{dir_path}/icon/x.png")
+        self.close_button = PyPeek.create_button("", f"{app_path}/icon/x.png")
         self.close_button.setIconSize(QSize(20, 20))
         # self.close_button.setFixedSize(30, 30)
         self.close_button.clicked.connect(self.close_app)
@@ -281,7 +281,7 @@ class PyPeek(QMainWindow):
         scroll_area.setWindowModality(Qt.ApplicationModal)
         scroll_area.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         scroll_area.setWindowTitle("Settings")
-        scroll_area.setWindowIcon(QIcon(f"{dir_path}/icon/pypeek.png"))
+        scroll_area.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
 
         return scroll_area
 
@@ -315,7 +315,7 @@ class PyPeek(QMainWindow):
         
     def create_tray_icon(self):
         tray_button = QSystemTrayIcon()
-        icon = QIcon(f"{dir_path}/icon/stop-fill.png")
+        icon = QIcon(f"{app_path}/icon/stop-fill.png")
         tray_button.setIcon(icon)
         tray_button.setToolTip("Stop Capture")
         tray_button.activated.connect(self.stop_capture)
@@ -323,8 +323,7 @@ class PyPeek(QMainWindow):
         return tray_button
 
     def load_settings(self):
-        home = os.path.expanduser('~')
-        config_file = os.path.join(home, '.pypeekconfig')
+        config_file = os.path.join(app_path, '.pypeekconfig')
         if not os.path.exists(config_file):
             return
 
@@ -354,8 +353,7 @@ class PyPeek(QMainWindow):
         self.drawover_options['text_width'] = config.getint('drawover', 'text_width', fallback=13)
     
     def save_settings(self):
-        home = os.path.expanduser('~')
-        config_file = os.path.join(home, '.pypeekconfig')
+        config_file = os.path.join(app_path, '.pypeekconfig')
         config = configparser.ConfigParser()
 
         config['capture'] = {
@@ -598,11 +596,11 @@ class PyPeek(QMainWindow):
     def set_fullscreen(self, value=True):
         self.block_resize_event = True
         if value:
-            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/bounding-box-circles.png"))
+            self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/bounding-box-circles.png"))
             self.setFixedSize(self.minimum_header_width, self.minimum_header_height) # prevent manual resizing height
             self.clearMask()
         else:
-            self.fullscreen_button.setIcon(QIcon(f"{dir_path}/icon/display.png"))
+            self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/display.png"))
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
@@ -880,7 +878,7 @@ class Capture(QThread):
         self.encode_options = None
         self.fullscreen = False
         self.show_cursor = True
-        self.cursor_image = QPixmap(f"{dir_path}/icon/cursor.png").scaled(28, 28, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.cursor_image = QPixmap(f"{app_path}/icon/cursor.png").scaled(28, 28, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.pos_x = 0
         self.pos_y = 0
         self.width = 0
@@ -889,7 +887,7 @@ class Capture(QThread):
         self.UID = ""
         self.capture_count = 0
         self.halt = False
-        self.cache_dir = f'{tempfile.gettempdir()}/pypeek'
+        self.cache_dir = f'{app_path}/.cache'
         self.current_cache_folder = f'{self.cache_dir}/{time.strftime("%H%M%S")}' # different folder for each capture
         self.start_capture_time = 0
         self.v_ext = "gif"
@@ -942,7 +940,7 @@ class Capture(QThread):
             self.true_fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
             self.c.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
-            if self.encode_options:
+            if self.encode_options and self.encode_options["drawover_image_path"]:
                 self._drawover()
             video_file = self.encode_video()
             self.c.encoding_done_signal.emit(video_file)
@@ -1001,8 +999,11 @@ class Capture(QThread):
             pixmap.save(filename, "jpg", 100)
 
     def encode_video(self):
-        start_number = 0 if self.encode_options is None else self.encode_options["drawover_range"][0]
-        vframes = self.capture_count if self.encode_options is None else self.encode_options["drawover_range"][1] - self.encode_options["drawover_range"][0]
+        start_number = 0
+        vframes = self.capture_count
+        if self.encode_options and self.encode_options["drawover_range"]:
+            start_number = self.encode_options["drawover_range"][0]
+            vframes = self.encode_options["drawover_range"][1] - self.encode_options["drawover_range"][0]
         fprefix = (f'{self.current_cache_folder}/pypeek_{self.UID}_')
         vidfile = f"{self.current_cache_folder}/pypeek_{self.UID}.{self.v_ext}"
         systemcall = str(self.ffmpeg_bin)+" -r " + str(self.true_fps) + " -y"
@@ -1084,7 +1085,7 @@ class TryLock(QThread):
     def __init__(self):
         super().__init__()
         self.c = Communicate()
-        self.lock_file = QLockFile(dir_path + "/pypeek.lock")
+        self.lock_file = QLockFile(app_path + "/lock.file")
 
     def run(self):
         while True:

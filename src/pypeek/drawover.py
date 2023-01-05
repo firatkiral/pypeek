@@ -8,9 +8,9 @@ from .undo import Undo, ClearSceneCmd, AddSceneItemCmd
 from .qrangeslider import QRangeSlider
 
 if getattr(sys, 'frozen', False):
-    dir_path = os.path.abspath(os.path.dirname(sys.executable))
+    app_path = os.path.abspath(os.path.dirname(sys.executable))
 elif __file__:
-    dir_path = os.path.abspath(os.path.dirname(__file__))
+    app_path = os.path.abspath(os.path.dirname(__file__))
 
 class DrawOver(QDialog):
     def __init__(self, image_path="", options=None, frame_rate=15, parent=None):
@@ -19,7 +19,7 @@ class DrawOver(QDialog):
         # self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.Window)
         self.setWindowTitle("Edit")
-        self.setWindowIcon(QIcon(f"{dir_path}/icon/pypeek.png"))
+        self.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
         self.setStyleSheet("QDialog {background-color: #333; color: #fff;}")
 
         self.image_width = 800
@@ -266,14 +266,14 @@ class DrawOver(QDialog):
         tool_button_group = QActionGroup(self)
 
         # create grab tool
-        self.select_tool = QAction(QIcon(f"{dir_path}/icon/cursor-light.png"), "", self)
+        self.select_tool = QAction(QIcon(f"{app_path}/icon/cursor-light.png"), "", self)
         self.select_tool.setToolTip("Select Tool")
         self.select_tool.setCheckable(True)
         tool_button_group.addAction(self.select_tool)
         self.select_tool.triggered.connect(lambda: self.set_tool("select"))
         toolbar.addAction(self.select_tool)
         
-        self.pen_tool = QAction(QIcon(f"{dir_path}/icon/pencil.png"), "", self)
+        self.pen_tool = QAction(QIcon(f"{app_path}/icon/pencil.png"), "", self)
         self.pen_tool.setToolTip("Pen Tool")
         self.pen_tool.setCheckable(True)
         tool_button_group.addAction(self.pen_tool)
@@ -290,14 +290,14 @@ class DrawOver(QDialog):
         shape_tool_button.setAttribute(Qt.WA_StyledBackground, True)
         shape_tool_button.setStyleSheet("QToolButton::menu-button { background-color: transparent; color: #aaa;}" )
 
-        self.text_tool = QAction(QIcon(f"{dir_path}/icon/fonts.png"), "", self)
+        self.text_tool = QAction(QIcon(f"{app_path}/icon/fonts.png"), "", self)
         self.text_tool.setToolTip("Text Tool")
         self.text_tool.setCheckable(True)
         tool_button_group.addAction(self.text_tool)
         self.text_tool.triggered.connect(lambda: self.set_tool("text"))
         toolbar.addAction(self.text_tool)
 
-        self.clear_tool = QAction(QIcon(f"{dir_path}/icon/broom.png"), "", self)
+        self.clear_tool = QAction(QIcon(f"{app_path}/icon/broom.png"), "", self)
         self.clear_tool.setToolTip("Clear Canvas")
         toolbar.addAction(self.clear_tool)
         self.clear_tool.triggered.connect(self.clear_canvas)
@@ -322,17 +322,17 @@ class DrawOver(QDialog):
         self.separator2 = toolbar.addSeparator()
 
         # add zoom tools
-        self.zoom_in_tool = QAction(QIcon(f"{dir_path}/icon/zoom-in.png"), "", self)
+        self.zoom_in_tool = QAction(QIcon(f"{app_path}/icon/zoom-in.png"), "", self)
         self.zoom_in_tool.setToolTip("Zoom In")
         self.zoom_in_tool.triggered.connect(self.zoom_in)
         toolbar.addAction(self.zoom_in_tool)
 
-        self.zoom_out_tool = QAction(QIcon(f"{dir_path}/icon/zoom-out.png"), "", self)
+        self.zoom_out_tool = QAction(QIcon(f"{app_path}/icon/zoom-out.png"), "", self)
         self.zoom_out_tool.setToolTip("Zoom Out")
         self.zoom_out_tool.triggered.connect(self.zoom_out)
         toolbar.addAction(self.zoom_out_tool)
 
-        self.reset_zoom_tool = QAction(QIcon(f"{dir_path}/icon/zoom-reset.png"), "", self)
+        self.reset_zoom_tool = QAction(QIcon(f"{app_path}/icon/zoom-reset.png"), "", self)
         self.reset_zoom_tool.setToolTip("Reset Zoom")
         self.reset_zoom_tool.triggered.connect(self.reset_zoom)
         toolbar.addAction(self.reset_zoom_tool)
@@ -361,7 +361,7 @@ class DrawOver(QDialog):
 
     def save_drawover_file(self):
         if len(self.items) > 0:
-            range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
+            range = (self.slider.minimum(), self.slider.maximum() + 1) if self.slider else None
             drawover_image_path = os.path.join(self.out_path, self.out_filename)
             self.encode_options = {"drawover_image_path": drawover_image_path, "drawover_range":range }
             self.canvas_widget.hide()
@@ -372,6 +372,9 @@ class DrawOver(QDialog):
             painter.end()
             self.canvas_widget.show()
             pixmap.save(drawover_image_path, "png")
+        if self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
+            range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
+            self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
         self.accept()
 
@@ -411,19 +414,19 @@ class DrawOver(QDialog):
             pause_button.show() if x == QTimeLine.State.Running else pause_button.hide(),
         ))
 
-        play_button = DrawOver.create_button("", f"{dir_path}/icon/play-fill.png")
+        play_button = DrawOver.create_button("", f"{app_path}/icon/play-fill.png")
         play_button.setFixedWidth(30)
         play_button.clicked.connect(lambda: (
             timeline.start() if self.slider.value() == self.slider.maximum() else timeline.resume(),
             play_button.hide(),
             pause_button.show()))
 
-        pause_button = DrawOver.create_button("", f"{dir_path}/icon/pause.png")
+        pause_button = DrawOver.create_button("", f"{app_path}/icon/pause.png")
         pause_button.setFixedWidth(30)
         pause_button.clicked.connect(lambda: (timeline.setPaused(True)))
         pause_button.hide()
 
-        stop_button = DrawOver.create_button("", f"{dir_path}/icon/stop-fill.png")
+        stop_button = DrawOver.create_button("", f"{app_path}/icon/stop-fill.png")
         stop_button.setFixedWidth(30)
         stop_button.clicked.connect(lambda: (timeline.stop(), timeline.setCurrentTime(0)))
 
@@ -480,7 +483,7 @@ class DrawOver(QDialog):
         icon_widget = QPushButton()
         icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
         icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
-        icon_widget.setIcon(QIcon(f"{dir_path}/icon/palette.png"))
+        icon_widget.setIcon(QIcon(f"{app_path}/icon/palette.png"))
         icon_widget.setIconSize(QSize(30, 30))
 
         self.color_menu_button = QPushButton("", self)
@@ -510,7 +513,7 @@ class DrawOver(QDialog):
             color_button.clicked.connect(lambda *args, _color=color: clicked(_color))
             action_layout.addWidget(color_button, int(i/3), i%3)
         
-        pick_button = QPushButton(QIcon(f"{dir_path}/icon/eyedropper.png"), "")
+        pick_button = QPushButton(QIcon(f"{app_path}/icon/eyedropper.png"), "")
         pick_button.setFixedSize(14, 14)
         pick_button.setIconSize(QSize(12, 12))
         pick_button.setStyleSheet(f"background-color: transparent;")
@@ -538,7 +541,7 @@ class DrawOver(QDialog):
         icon_widget = QPushButton()
         icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
         icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
-        icon_widget.setIcon(QIcon(f"{dir_path}/icon/line-width.png"))
+        icon_widget.setIcon(QIcon(f"{app_path}/icon/line-width.png"))
         icon_widget.setIconSize(QSize(30, 30))
 
         self.width_spinner = QSpinBox()
@@ -574,7 +577,7 @@ class DrawOver(QDialog):
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         menu.setContentsMargins(0, 5, 0, 5)
 
-        menu_action = QAction(QIcon(f"{dir_path}/icon/{shapes[self.current_shape]}"), "", self)
+        menu_action = QAction(QIcon(f"{app_path}/icon/{shapes[self.current_shape]}"), "", self)
         menu_action.setMenu(menu)
 
         action = QWidgetAction(menu)
@@ -589,12 +592,12 @@ class DrawOver(QDialog):
 
         def clicked(_shape, _icon):
             self.current_shape = _shape
-            menu_action.setIcon(QIcon(f"{dir_path}/icon/{_icon}.png"))
+            menu_action.setIcon(QIcon(f"{app_path}/icon/{_icon}.png"))
             self.set_tool(_shape)
             menu.close()
 
         for shape, icon in shapes.items():
-            shape_button = QPushButton(QIcon(f"{dir_path}/icon/{icon}.png"), "")
+            shape_button = QPushButton(QIcon(f"{app_path}/icon/{icon}.png"), "")
             shape_button.setFixedSize(54, 34)
             shape_button.setIconSize(QSize(18, 18))
             shape_button.setStyleSheet("QPushButton {background-color: transparent; } QPushButton:hover {background-color: #444; }")
