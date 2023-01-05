@@ -18,6 +18,8 @@
 
 - Python 3.10 or later
 
+- Windows, macOS, Linux
+
 <br/>
 
 ### Install:

@@ -1,7 +1,7 @@
 import os, shutil, time, subprocess, tempfile, configparser, sys, requests
 from .shortcut import create_shortcut
 from .static_ffmpeg import add_paths
-from.drawover import DrawOver
+from .drawover import DrawOver
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -873,6 +873,7 @@ class Communicate(QObject):
 class Capture(QThread):
     def __init__(self, app):
         super().__init__()
+        
         self.app = app
         self.mode = "record" # record, encode, snapshot
         self.encode_options = None

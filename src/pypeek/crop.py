@@ -175,8 +175,11 @@ class Crop(QMainWindow):
     def mouse_release_event(self, event: QMouseEvent) -> None:
         self.drag_start_position = None
 
-if __name__ == "__main__":
+def show_crop():
     app = QApplication(sys.argv)
     window = Crop()
     window.show()
     app.exec()
+
+if __name__ == "__main__":
+    show_crop()
