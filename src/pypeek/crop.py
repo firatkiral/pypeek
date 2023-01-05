@@ -88,7 +88,6 @@ class Crop(QMainWindow):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
         self.setMinimumSize(50, 50)
-        self.show()
         self.move(self.pos_x, self.pos_y)
         self.resize(self.record_width, self.record_height)
         self.set_mask()
@@ -177,6 +176,7 @@ class Crop(QMainWindow):
         self.drag_start_position = None
 
 if __name__ == "__main__":
-    app = QApplication([])
+    app = QApplication(sys.argv)
     window = Crop()
+    window.show()
     app.exec()

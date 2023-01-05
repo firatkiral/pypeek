@@ -1,8 +1,7 @@
 import sys, os, tempfile
 from PySide6.QtWidgets import *
-from PySide6.QtGui import *
 from PySide6.QtCore import *
-from PySide6.QtCore import Qt
+from PySide6.QtGui import *
 from math import atan2, pi
 from .undo import Undo, ClearSceneCmd, AddSceneItemCmd
 from .qrangeslider import QRangeSlider
@@ -15,9 +14,9 @@ elif __file__:
 class DrawOver(QDialog):
     def __init__(self, image_path="", options=None, frame_rate=15, parent=None):
         super().__init__(parent)
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         # self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(Qt.Window)
+        self.setWindowFlags(Qt.WindowType.Window)
         self.setWindowTitle("Edit")
         self.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
         self.setStyleSheet("QDialog {background-color: #333; color: #fff;}")
@@ -47,7 +46,7 @@ class DrawOver(QDialog):
             self.out_path = os.path.dirname(image_path)
         else:
             self.bg_pixmap = QPixmap(self.image_width, self.image_height)
-            self.bg_pixmap.fill(Qt.white)
+            self.bg_pixmap.fill(Qt.GlobalColor.white)
 
         # Undo/Redo
         self.undo_history = Undo()
@@ -63,16 +62,16 @@ class DrawOver(QDialog):
         self.pen_width = options["pen_width"] if options else 2
         self.shape_color = options["shape_color"] if options else "yellow"
         self.shape_width = options["shape_width"] if options else 2
-        self.text_color = options["text_color"] if options else "white"
+        self.text_color = options["text_color"] if options else "black"
         self.text_size = options["text_size"] if options else 13
         self.dragging = False
         self.current_text_item = None
         self.slider = None
-        self.current_pen = QPen(QColor(self.pen_color), self.pen_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+        self.current_pen = QPen(QColor(self.pen_color), self.pen_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin)
         self.current_brush = QBrush(QColor(self.pen_color))
 
         self.items = []
-        self.arrow_polygon = QPolygon([QPoint(2, 0), QPoint(-10, 5), QPoint(-10, -5)])
+        self.arrow_polygon = QPolygonF([QPointF(2, 0), QPointF(-10, 5), QPointF(-10, -5)])
         
         # Toolbar
         self.toolbar = self.create_toolbar()
@@ -90,10 +89,10 @@ class DrawOver(QDialog):
         self.bg_image = self.create_bg_image()
         self.canvas = self.create_canvas()
         self.text_widget = QWidget()
-        self.text_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.text_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
 
         canvas_layout = QStackedLayout()
-        canvas_layout.setStackingMode(QStackedLayout.StackAll)
+        canvas_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         canvas_layout.addWidget(self.bg_image)
         canvas_layout.addWidget(self.canvas)
         canvas_layout.addWidget(self.text_widget)
@@ -106,10 +105,10 @@ class DrawOver(QDialog):
         self.scene.addWidget(self.canvas_widget)
         self.view = QGraphicsView(self.scene)
         self.view.setStyleSheet("QGraphicsView {background-color: #333; color: #fff;}")
-        self.view.setRenderHint(QPainter.Antialiasing)
-        self.view.setRenderHint(QPainter.SmoothPixmapTransform)
-        self.view.setFocusPolicy(Qt.StrongFocus)
-        self.view.viewport().setAttribute(Qt.WA_AcceptTouchEvents)
+        self.view.setRenderHint(QPainter.RenderHint.Antialiasing)
+        self.view.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        self.view.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.view.viewport().setAttribute(Qt.WidgetAttribute.WA_AcceptTouchEvents)
 
         self.canvas.mousePressEvent = self._mousePressEvent
         self.canvas.mouseMoveEvent = self._mouseMoveEvent
@@ -171,7 +170,6 @@ class DrawOver(QDialog):
         self.set_tool("select")
         self.setFocus()
 
-    @Slot()
     def zoom_in(self):
         scale_tr = QTransform()
         scale_tr.scale(1.1, 1.1)
@@ -179,7 +177,6 @@ class DrawOver(QDialog):
         tr = self.view.transform() * scale_tr
         self.view.setTransform(tr)
 
-    @Slot()
     def zoom_out(self):
         scale_tr = QTransform()
         scale_tr.scale(.9, .9)
@@ -187,7 +184,6 @@ class DrawOver(QDialog):
         tr = self.view.transform() * scale_tr
         self.view.setTransform(tr)
     
-    @Slot()
     def reset_zoom(self):
         self.view.resetTransform()
     
@@ -287,7 +283,7 @@ class DrawOver(QDialog):
         self.shape_tool.triggered.connect(lambda: self.set_tool(self.current_shape))
         toolbar.addAction(self.shape_tool)
         shape_tool_button = toolbar.widgetForAction(self.shape_tool)
-        shape_tool_button.setAttribute(Qt.WA_StyledBackground, True)
+        shape_tool_button.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         shape_tool_button.setStyleSheet("QToolButton::menu-button { background-color: transparent; color: #aaa;}" )
 
         self.text_tool = QAction(QIcon(f"{app_path}/icon/fonts.png"), "", self)
@@ -349,15 +345,15 @@ class DrawOver(QDialog):
     
     def create_bg_image(self):
         bg_image = QLabel()
-        bg_image.setAlignment(Qt.AlignCenter)
-        bg_image.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        bg_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        bg_image.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
         bg_image.setPixmap(self.bg_pixmap)
 
         return bg_image
 
     def update_bg_image(self, image_filename):
         self.bg_pixmap = QPixmap(os.path.join(self.out_path, image_filename))
-        self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.KeepAspectRatio))
+        self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.AspectRatioMode.KeepAspectRatio))
 
     def save_drawover_file(self):
         if len(self.items) > 0:
@@ -366,7 +362,7 @@ class DrawOver(QDialog):
             self.encode_options = {"drawover_image_path": drawover_image_path, "drawover_range":range }
             self.canvas_widget.hide()
             pixmap = QPixmap(self.canvas_width, self.canvas_height)
-            pixmap.fill(Qt.transparent)
+            pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
             self.scene.render(painter)
             painter.end()
@@ -380,17 +376,17 @@ class DrawOver(QDialog):
 
     def create_canvas(self):
         canvas = QLabel()
-        canvas.setAlignment(Qt.AlignCenter)
-        canvas.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+        canvas.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        canvas.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
         self.pixmap = QPixmap(self.image_width, self.image_height)
-        self.pixmap.fill(Qt.transparent)
+        self.pixmap.fill(Qt.GlobalColor.transparent)
         canvas.setPixmap(self.pixmap)
 
         self.prev_pixmap = self.pixmap
         return canvas
 
     def create_timeline(self):
-        self.slider = QSlider(Qt.Horizontal)
+        self.slider = QSlider(Qt.Orientation.Horizontal)
         self.slider.setRange(0, self.frame_count)
         self.slider.valueChanged.connect(lambda x: (timeline.blockSignals(True),
                                                timeline.setCurrentTime((x - self.slider.minimum()) * (1000/self.frame_rate)),
@@ -456,7 +452,7 @@ class DrawOver(QDialog):
             ))
 
         range_layout = QStackedLayout()
-        range_layout.setStackingMode(QStackedLayout.StackAll)
+        range_layout.setStackingMode(QStackedLayout.StackingMode.StackAll)
         range_layout.addWidget(range_slider)
 
         self.slider.valueChanged.connect(lambda : self.update_bg_image(self.image_filenames[self.slider.value()]))
@@ -481,7 +477,7 @@ class DrawOver(QDialog):
         # menu.setContentsMargins(10, 5, 10, 5)
 
         icon_widget = QPushButton()
-        icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        icon_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
         icon_widget.setIcon(QIcon(f"{app_path}/icon/palette.png"))
         icon_widget.setIconSize(QSize(30, 30))
@@ -539,13 +535,13 @@ class DrawOver(QDialog):
 
     def create_width_tool(self):
         icon_widget = QPushButton()
-        icon_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        icon_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
         icon_widget.setStyleSheet("QPushButton {border-radius: 5px; Background-color: transparent; color: #ddd;}")
         icon_widget.setIcon(QIcon(f"{app_path}/icon/line-width.png"))
         icon_widget.setIconSize(QSize(30, 30))
 
         self.width_spinner = QSpinBox()
-        self.width_spinner.setAlignment(Qt.AlignRight)
+        self.width_spinner.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.width_spinner.setFixedSize(50, 30)
         self.width_spinner.setRange(0, 100)
         self.width_spinner.setSingleStep(1)
@@ -573,7 +569,7 @@ class DrawOver(QDialog):
     def create_shape_tool(self):
         shapes = {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'rectangle':'square', 'ellipse':'circle' }
         menu = QMenu(self)
-        menu.setAttribute(Qt.WA_StyledBackground, True)
+        menu.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
         menu.setContentsMargins(0, 5, 0, 5)
 
@@ -673,9 +669,9 @@ class DrawOver(QDialog):
             color = self.pen_color
             width = self.pen_width
 
-        self.current_pen.setColor(color)
+        self.current_pen.setColor(QColor(color))
         self.current_pen.setWidth(width)
-        self.current_brush.setColor(color)
+        self.current_brush.setColor(QColor(color))
         self.width_spinner.blockSignals(True)
         self.width_spinner.setValue(width)
         self.width_spinner.blockSignals(False)
@@ -717,7 +713,7 @@ class DrawOver(QDialog):
         self.dragging = True
         if self.current_tool == "select":
             self.select_start_point = e.position()
-            QApplication.setOverrideCursor(Qt.ClosedHandCursor)
+            QApplication.setOverrideCursor(Qt.CursorShape.ClosedHandCursor)
         if self.current_tool == "pen":
             self.current_path = QPainterPath()
             self.current_path.moveTo(self.start_point)
@@ -779,13 +775,11 @@ class DrawOver(QDialog):
         if self.current_tool == "rectangle":
             self.current_rectangle_item = QGraphicsRectItem()
             self.current_rectangle_item.setPen(self.current_pen)
-            self.current_rectangle_item.setBrush(Qt.NoBrush)
             self.current_rectangle_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
             self.scene.addItem(self.current_rectangle_item)
         if self.current_tool == "ellipse":
             self.current_ellipse_item = QGraphicsEllipseItem()
             self.current_ellipse_item.setPen(self.current_pen)
-            self.current_ellipse_item.setBrush(Qt.NoBrush)
             self.current_ellipse_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
             self.scene.addItem(self.current_ellipse_item)
         if self.current_tool == "text":
@@ -798,9 +792,9 @@ class DrawOver(QDialog):
             font.setPointSize(self.text_size)
             text_input.setFont(font)
             text_input.setUndoRedoEnabled(False)
-            text_input.setUndoRedoEnabled(False)
-            text_input.setFixedSize(60, 30)
-            text_input.setStyleSheet(f"background-color: rgba(0,0,0,0.30); color:{self.text_color};")
+
+            text_input.setFixedSize(60, 30 * self.text_size / 10)
+            text_input.setStyleSheet(f"QTextEdit {{background-color: rgba(255,255,255, .8); color:{self.text_color};}}")
 
             self.current_text_item = QWidget()
             self.current_text_item.setStyleSheet("background-color: transparent;")
@@ -811,8 +805,8 @@ class DrawOver(QDialog):
             text_input.move(self.start_point.x(), self.start_point.y())
             text_input.setFocus()
 
-            text_input.textChanged.connect(lambda: (text_input.setFixedSize(text_input.document().idealWidth() + 20,
-                                                                            text_input.document().size().height() + 10)))
+            text_input.textChanged.connect(lambda: (text_input.setFixedSize(text_input.document().idealWidth() + 20 * self.text_size / 10,
+                                                                            text_input.document().size().height() + 10 * self.text_size / 10)))
 
             def focusOutEvent(e):
                     text_input.setReadOnly(True)

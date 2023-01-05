@@ -53,7 +53,7 @@ class PyPeek(QMainWindow):
             'pen_width': 2,
             'shape_color': 'yellow',
             'shape_width': 2,
-            'text_color': 'white',
+            'text_color': 'black',
             'text_size': 13}
 
         # load settings from json file
@@ -278,7 +278,7 @@ class PyPeek(QMainWindow):
         scroll_area.setWidgetResizable(True)
 
         scroll_area.resize(600, 400)
-        scroll_area.setWindowModality(Qt.ApplicationModal)
+        scroll_area.setWindowModality(Qt.WindowModality.ApplicationModal)
         scroll_area.setWindowFlags(Qt.WindowType.Window | Qt.WindowType.WindowStaysOnTopHint)
         scroll_area.setWindowTitle("Settings")
         scroll_area.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
@@ -349,7 +349,7 @@ class PyPeek(QMainWindow):
         self.drawover_options['pen_width'] = config.getint('drawover', 'pen_width', fallback=2)
         self.drawover_options['shape_color'] = config.get('drawover', 'shape_color', fallback='yellow')
         self.drawover_options['shape_width'] = config.getint('drawover', 'shape_width', fallback=2)
-        self.drawover_options['text_color'] = config.get('drawover', 'text_color', fallback='white')
+        self.drawover_options['text_color'] = config.get('drawover', 'text_color', fallback='black')
         self.drawover_options['text_width'] = config.getint('drawover', 'text_width', fallback=13)
     
     def save_settings(self):
@@ -406,7 +406,7 @@ class PyPeek(QMainWindow):
             'pen_width': 2,
             'shape_color': "yellow",
             'shape_width': 2,
-            'text_color': "white",
+            'text_color': "black",
             'text_size': 12
         }
         self.save_settings()
@@ -717,7 +717,7 @@ class PyPeek(QMainWindow):
         framerate_row.setSpacing(0)
         framerate_row.setContentsMargins(5, 5, 5, 5)
         framerate_input = QSpinBox()
-        framerate_input.setAlignment(Qt.AlignRight)
+        framerate_input.setAlignment(Qt.AlignmentFlag.AlignRight)
         framerate_input.setFixedSize(40, 30)
         framerate_input.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
         framerate_input.setRange(min_value, max_value)
@@ -878,7 +878,7 @@ class Capture(QThread):
         self.encode_options = None
         self.fullscreen = False
         self.show_cursor = True
-        self.cursor_image = QPixmap(f"{app_path}/icon/cursor.png").scaled(28, 28, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.cursor_image = QPixmap(f"{app_path}/icon/cursor.png").scaled(28, 28, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
         self.pos_x = 0
         self.pos_y = 0
         self.width = 0
@@ -1099,10 +1099,11 @@ class TryLock(QThread):
     def try_lock(self):
         return self.lock_file.tryLock()
 
+
 def _show():
-    not QApplication.instance() and QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = PyPeek()
-    QApplication.instance().exec()
+    app.exec()
     if window.needs_restart:
         _show()
 
