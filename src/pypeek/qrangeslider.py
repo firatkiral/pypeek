@@ -68,7 +68,7 @@ QRangeSlider > QSplitter::handle {
     width: 0px;
     height: 0px;
     border-top: 0px solid #555;
-    border-bottom: 14px solid #555;
+    border-bottom: 18px solid #555;
     border-right: 6px solid #333;
     border-left: 6px solid #333;
 }
