@@ -1,19 +1,16 @@
 import os, shutil, time, subprocess, tempfile, configparser, sys, requests
 from .shortcut import create_shortcut
-from .static_ffmpeg import add_paths
 from .drawover import DrawOver
+from .ffmpeg import get_ffmpeg
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
-__all__ = ['show']
-
-add_paths()
-
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = sys._MEIPASS
-    # dir_path = os.path.abspath(os.path.dirname(sys.executable))
+    os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
 elif __file__:
+    get_ffmpeg()
     app_path = os.path.abspath(os.path.dirname(__file__))
 
 

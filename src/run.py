@@ -1,0 +1,3 @@
+import pypeek
+
+pypeek.show()

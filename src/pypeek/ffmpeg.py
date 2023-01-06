@@ -1,39 +1,15 @@
-"""
-    Entry point for running the ffmpeg executable.
-"""
+import os, sys, zipfile, stat, requests, datetime
 
-import subprocess
-import os
-import stat
-import sys
-import zipfile
-from datetime import datetime
-
-import requests  # type: ignore
-from filelock import FileLock, Timeout
-
-TIMEOUT = 10 * 60  # Wait upto 10 minutes to validate install
-# otherwise break the lock and install anyway.
-
-# if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-#     SELF_DIR = sys._MEIPASS
-# elif __file__:
-#     SELF_DIR = os.path.abspath(os.path.dirname(__file__))
-
-SELF_DIR = os.path.join(os.path.expanduser("~"), "Peek", "ffmpeg")
-
-# make dir recursively if not exists
-os.makedirs(SELF_DIR, exist_ok=True)
-
-LOCK_FILE = os.path.join(SELF_DIR, "lock.file")
-
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    SELF_DIR = sys._MEIPASS
+elif __file__:
+    SELF_DIR = os.path.abspath(os.path.dirname(__file__))
 
 PLATFORM_ZIP_FILES = {
     "win32": "https://github.com/zackees/ffmpeg_bins/raw/main/v5.0/win32.zip",
     "darwin": "https://github.com/zackees/ffmpeg_bins/raw/main/v5.0/darwin.zip",
     "linux": "https://github.com/zackees/ffmpeg_bins/raw/main/v5.0/linux.zip",
 }
-
 
 def check_system():
     """Friendly error if there's a problem with the system configuration."""
@@ -45,7 +21,6 @@ def get_platform_http_zip():
     """Return the download link for the current platform"""
     check_system()
     return PLATFORM_ZIP_FILES[sys.platform]
-
 
 def get_platform_dir():
     """Either get the executable or raise an error"""
@@ -70,29 +45,12 @@ def download_file(url, local_path):
             print(f"\nDownload of {url} -> {local_path} completed.\n")
     return local_path
 
-
 def get_or_fetch_platform_executables_else_raise(fix_permissions=True):
-    """Either get the executable or raise an error"""
-    lock = FileLock(LOCK_FILE, timeout=TIMEOUT)  # pylint: disable=E0110
-    try:
-        with lock.acquire():
-            return _get_or_fetch_platform_executables_else_raise_no_lock(
-                fix_permissions=fix_permissions
-            )
-    except Timeout:
-        sys.stderr.write(
-            f"{__file__}: Warning, could not acquire lock at {LOCK_FILE}\n"
-        )
-        return _get_or_fetch_platform_executables_else_raise_no_lock(
-            fix_permissions=fix_permissions
-        )
-
-
-def _get_or_fetch_platform_executables_else_raise_no_lock(fix_permissions=True):
     """Either get the executable or raise an error, internal api"""
     exe_dir = get_platform_dir()
     installed_crumb = os.path.join(exe_dir, "installed.crumb")
     if not os.path.exists(installed_crumb):
+        print(f"Installing ffmpeg to {exe_dir}")
         # All zip files store their platform executables in a folder
         # like "win32" or "darwin" or "linux" inside the executable. So root
         # the install one level up from that same directory.
@@ -109,7 +67,7 @@ def _get_or_fetch_platform_executables_else_raise_no_lock(fix_permissions=True):
         except OSError as err:
             print(f"{__file__}: Error could not remove {local_zip} because of {err}")
         with open(installed_crumb, "wt") as filed:  # pylint: disable=W1514
-            filed.write(f"installed from {url} on {datetime.now().__str__()}")
+            filed.write(f"installed from {url} on {datetime.datetime.now().__str__()}")
     ffmpeg_exe = os.path.join(exe_dir, "ffmpeg")
     ffprobe_exe = os.path.join(exe_dir, "ffprobe")
     if sys.platform == "win32":
@@ -129,28 +87,8 @@ def _get_or_fetch_platform_executables_else_raise_no_lock(fix_permissions=True):
             assert os.access(exe, os.R_OK), f"Could not get read bits of {exe}"
     return ffmpeg_exe, ffprobe_exe
 
-
-def main_static_ffmpeg():
-    """Entry point for running static_ffmpeg, which delegates to ffmpeg."""
-    ffmpeg_exe, _ = get_or_fetch_platform_executables_else_raise()
-    rtn: int = subprocess.call([ffmpeg_exe] + sys.argv[1:])
-    sys.exit(rtn)
-
-
-def main_static_ffprobe():
-    """Entry point for running static_ffmpeg, which delegates to ffmpeg."""
-    _, ffprobe = get_or_fetch_platform_executables_else_raise()
-    rtn: int = subprocess.call([ffprobe] + sys.argv[1:])
-    sys.exit(rtn)
-
-
-def main_print_paths():
-    """Entry point for printing ffmpeg paths"""
-    ffmpeg_exe, ffprobe_exe = get_or_fetch_platform_executables_else_raise()
-    print(f"FFMPEG={ffmpeg_exe}")
-    print(f"FFPROBE={ffprobe_exe}")
-    sys.exit(0)
-
-
-if __name__ == "__main__":
-    get_or_fetch_platform_executables_else_raise()
+def get_ffmpeg():
+    os.makedirs(SELF_DIR, exist_ok=True)
+    ffmpeg, _ = get_or_fetch_platform_executables_else_raise()
+    os.environ["PATH"] = os.pathsep.join([os.path.dirname(ffmpeg), os.environ["PATH"]])
+    return ffmpeg

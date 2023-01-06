@@ -5,9 +5,9 @@ block_cipher = None
 
 
 a = Analysis(
-    ['src/deploy.py'],
+    ['src/run.py'],
     pathex=[],
-    binaries=[],
+    binaries=[('dist/ffmpeg/*', '.')],
     datas=[ ('src/pypeek/icon/*.*', 'icon') ],
     hiddenimports=[],
     hookspath=[],

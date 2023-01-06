@@ -30,15 +30,22 @@ classifiers = [
 ]
 dependencies = [
     "PySide6 ~= 6.4.0",
-    "filelock ~= 3.9.0",
     "requests ~= 2.28.1"
 ]
 
-#[tool.hatch.build.targets.wheel]
-#only-include = ["src/mypackage", "scripts"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/pypeek"]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+  "/pypeek-onefile.spec",
+  "/pypeek.spec",
+  "/data",
+  "/req.txt",
+]
 
 #[tool.hatch.build.targets.wheel.sources]
-#"src" = ""
+#"src" = "src"
 #"scripts" = "mypackage/scripts"
 
 [project.scripts]
