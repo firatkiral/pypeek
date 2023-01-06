@@ -106,7 +106,7 @@ class PyPeek(QMainWindow):
         self.show()
         self.set_mask()
         self.capture.fullscreen and self.set_fullscreen()
-        self.check_update_on_startup and self.check_update()
+        # self.check_update_on_startup and self.check_update()
         self.try_lock()
 
     def create_header_widget(self):
@@ -240,7 +240,7 @@ class PyPeek(QMainWindow):
 
     def create_settings_widget(self):
         self.cursor_widget = PyPeek.create_row_widget("Capture Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
-        self.hide_app_widget = PyPeek.create_row_widget("Minimize App To Tray", "Minimize app to tray when recording", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
+        self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray Icon", "Minimize app to tray icon when recording", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
@@ -264,8 +264,8 @@ class PyPeek(QMainWindow):
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.duration_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
-        self.settings_layout.addWidget(self.update_widget)
-        self.settings_layout.addWidget(PyPeek.create_h_divider())
+        # self.settings_layout.addWidget(self.update_widget)
+        # self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.reset_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.copyright_widget)
@@ -508,7 +508,6 @@ class PyPeek(QMainWindow):
         self.stop_button.setText(f' {value}')
         if value == 0:
             self.stop_button.setText("0:00")
-            self.showMinimized()
     
     def update_timer_ui(self, value):
         minutes = value // 60
@@ -589,6 +588,7 @@ class PyPeek(QMainWindow):
         if self.capture.fullscreen and self.minimize_to_tray:
             self.hide()
             self.tray_icon.show()
+            self.tray_icon.showMessage("Peek is recording!", "Peek minimized to tray icon and running in background", QSystemTrayIcon.MessageIcon.Information, 6000)
     
     def stop_capture(self):
         self.capture.stop()
