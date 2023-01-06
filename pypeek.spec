@@ -26,7 +26,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='PyPeek',
+    name='Peek',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -37,6 +37,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    uac_admin=True,
     icon=['src/pypeek/icon/pypeek.ico'],
 )
 coll = COLLECT(
@@ -47,11 +48,11 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='PyPeek',
+    name='Peek',
 )
 app = BUNDLE(
     coll,
-    name='PyPeek.app',
+    name='Peek.app',
     icon='src/pypeek/icon/pypeek.icns',
     bundle_identifier=None,
 )
