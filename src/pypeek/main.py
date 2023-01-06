@@ -31,7 +31,7 @@ class PyPeek(QMainWindow):
         self.capture.capture_stopped_signal.connect(self.end_capture_ui)
         self.capture.countdown_signal.connect(self.update_countdown_ui)
         self.capture.run_timer_signal.connect(self.update_timer_ui)
-        self.capture.hide_app_signal.connect(self.hide_app)
+        self.capture.minimize_to_tray_signal.connect(self.do_minimize_to_tray)
 
         self.capture.show_cursor = True
         self.capture.fullscreen = True
@@ -39,11 +39,11 @@ class PyPeek(QMainWindow):
         self.capture.fps = 15
         self.capture.quality = "md" # md, hi
         self.capture.delay = 3
-        self.minimize_to_tray = True
         self.record_width = 600
         self.record_height = 400
         self.pos_x = 100
         self.pos_y = 100
+        self.minimize_to_tray = False
         self.check_update_on_startup = True
         self.needs_restart = False
 
@@ -240,7 +240,7 @@ class PyPeek(QMainWindow):
 
     def create_settings_widget(self):
         self.cursor_widget = PyPeek.create_row_widget("Capture Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
-        self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray Icon", "Minimize app to tray icon when recording", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
+        self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray", "Minimize app to tray icon when recording", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
@@ -333,7 +333,7 @@ class PyPeek(QMainWindow):
         config.read(config_file)
 
         self.capture.show_cursor = config.getboolean('capture', 'show_cursor', fallback=True)
-        self.minimize_to_tray = config.getboolean('capture', 'minimize_to_tray', fallback=True)
+        self.minimize_to_tray = config.getboolean('capture', 'minimize_to_tray', fallback=False)
         self.capture.fullscreen = config.getboolean('capture', 'fullscreen', fallback=True)
         self.capture.v_ext = config.get('capture', 'v_ext', fallback='gif')
         self.capture.fps = config.getint('capture', 'fps', fallback=15)
@@ -389,7 +389,7 @@ class PyPeek(QMainWindow):
 
     def reset_settings(self):
         self.capture.show_cursor = True
-        self.minimize_to_tray = True
+        self.minimize_to_tray = False
         self.capture.fullscreen = True
         self.capture.v_ext = "gif"
         self.capture.fps = 15
@@ -468,40 +468,55 @@ class PyPeek(QMainWindow):
         self.record_button.setText(f"{self.capture.v_ext.upper()}")
 
     def prepare_capture_ui(self):
-        self.record_button_grp.hide()
         self.stop_button.show()
-        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
-        self.capture.width = self.record_area_widget.width()
-        self.capture.height = self.record_area_widget.height()
-        self.snapshot_button.setDisabled(True)
+        self.record_button_grp.hide()
         self.record_button.setDisabled(True)
         self.record_button.setIconSize(QSize(0, 0))
         self.record_button.setText("Working...")
-        self.menu_button.setDisabled(True)
-        self.fullscreen_button.setDisabled(True)
-        self.settings_button.setDisabled(True)
+        # self.snapshot_button.setDisabled(True)
+        # self.menu_button.setDisabled(True)
+        # self.fullscreen_button.setDisabled(True)
+        # self.settings_button.setDisabled(True)
+        self.snapshot_button.hide()
+        self.menu_button.hide()
+        self.fullscreen_button.hide()
+        self.settings_button.hide()
+        self.close_button.hide()
+        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
+        self.capture.width = self.record_area_widget.width()
+        self.capture.height = self.record_area_widget.height()
         if not self.capture.fullscreen:
             self.setFixedSize(self.record_width, self.record_height)
+        else:
+            if not self.minimize_to_tray:
+                self.setFixedSize(130, self.minimum_header_height)
         
     def end_capture_ui(self):
         self.tray_icon.hide()
         self.record_button_grp.show()
         self.stop_button.hide()
-        self.snapshot_button.setDisabled(False)
         self.record_button.setDisabled(False)
         self.record_button.setText(self.capture.v_ext.upper())
         self.record_button.setIconSize(QSize(20, 20))
         self.stop_button.setText("0:00")
-        self.menu_button.setDisabled(False)
-        self.fullscreen_button.setDisabled(False)
-        self.settings_button.setDisabled(False)
-        self.close_button.setDisabled(False)
+        # self.snapshot_button.setDisabled(False)
+        # self.menu_button.setDisabled(False)
+        # self.fullscreen_button.setDisabled(False)
+        # self.settings_button.setDisabled(False)
+        # self.close_button.setDisabled(False)
+        self.snapshot_button.show()
+        self.menu_button.show()
+        self.fullscreen_button.show()
+        self.settings_button.show()
+        self.close_button.show()
         if not self.capture.fullscreen:
             self.block_resize_event = True
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
             self.block_resize_event = False
+        else:
+            self.setFixedWidth(self.minimum_header_width)
         self.capture.clear_cache_files()
 
     def update_countdown_ui(self, value):
@@ -572,6 +587,8 @@ class PyPeek(QMainWindow):
         self.end_capture_ui()
 
     def set_mask(self):
+        if self.capture.fullscreen:
+            return
         self.timer.stop()
         self.hide()
         empty_region = QRegion(QRect(QPoint(8,43), self.frame.size() - QSize(16, 51)), QRegion.RegionType.Rectangle)
@@ -584,11 +601,11 @@ class PyPeek(QMainWindow):
         self.close()
         self.destroy()
 
-    def hide_app(self):
-        if self.capture.fullscreen and self.minimize_to_tray:
+    def do_minimize_to_tray(self, show_notification = False):
+        if self.minimize_to_tray:
             self.hide()
             self.tray_icon.show()
-            self.tray_icon.showMessage("Peek is recording!", "Peek minimized to tray icon and running in background", QSystemTrayIcon.MessageIcon.Information, 6000)
+            show_notification and self.tray_icon.showMessage("Peek is recording!", "Peek minimized to tray icon and running in background", QSystemTrayIcon.MessageIcon.Information, 6000)
     
     def stop_capture(self):
         self.capture.stop()
@@ -871,7 +888,7 @@ class Capture(QThread):
     countdown_signal = Signal(int)
     run_timer_signal = Signal(int)
     capture_stopped_signal = Signal()
-    hide_app_signal = Signal()
+    minimize_to_tray_signal = Signal(bool)
 
     def __init__(self, app):
         super().__init__()
@@ -916,7 +933,7 @@ class Capture(QThread):
                 self.capture_stopped_signal.emit()
                 self.quit()
                 return
-            self.hide_app_signal.emit()
+            self.fullscreen and self.minimize_to_tray_signal.emit(True)
             self.clear_cache_files()
             self.UID = time.strftime("%Y%m%d-%H%M%S")
             self.capture_count = 0
@@ -951,7 +968,7 @@ class Capture(QThread):
                 self.capture_stopped_signal.emit()
                 self.quit()
                 return
-            self.hide_app_signal.emit()
+            self.fullscreen and self.minimize_to_tray_signal.emit(False)
             time.sleep(.1)
             filepath = self._snapshot()
             self.snapshot_done_signal.emit(filepath)
