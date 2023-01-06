@@ -16,6 +16,11 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
 elif __file__:
     app_path = os.path.abspath(os.path.dirname(__file__))
 
+
+user_path = os.path.join(os.path.expanduser("~"), "Peek")
+if not os.path.exists(user_path):
+    os.mkdir(user_path)
+
 class PyPeek(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -323,7 +328,7 @@ class PyPeek(QMainWindow):
         return tray_button
 
     def load_settings(self):
-        config_file = os.path.join(app_path, '.pypeekconfig')
+        config_file = os.path.join(user_path, 'pypeek.cfg')
         if not os.path.exists(config_file):
             return
 
@@ -353,7 +358,7 @@ class PyPeek(QMainWindow):
         self.drawover_options['text_width'] = config.getint('drawover', 'text_width', fallback=13)
     
     def save_settings(self):
-        config_file = os.path.join(app_path, '.pypeekconfig')
+        config_file = os.path.join(user_path, 'pypeek.cfg')
         config = configparser.ConfigParser()
 
         config['capture'] = {
@@ -887,7 +892,7 @@ class Capture(QThread):
         self.UID = ""
         self.capture_count = 0
         self.halt = False
-        self.cache_dir = f'{app_path}/.cache'
+        self.cache_dir = f'{user_path}/.cache'
         self.current_cache_folder = f'{self.cache_dir}/{time.strftime("%H%M%S")}' # different folder for each capture
         self.start_capture_time = 0
         self.v_ext = "gif"
@@ -1082,7 +1087,7 @@ class CheckUpdate(QThread):
 class TryLock(QThread):
     def __init__(self):
         super().__init__()
-        self.lock_file = QLockFile(app_path + "/lock.file")
+        self.lock_file = QLockFile(user_path + "/peek.lock")
 
     def run(self):
         while True:

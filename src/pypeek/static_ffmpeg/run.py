@@ -15,10 +15,16 @@ from filelock import FileLock, Timeout
 TIMEOUT = 10 * 60  # Wait upto 10 minutes to validate install
 # otherwise break the lock and install anyway.
 
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    SELF_DIR = sys._MEIPASS
-elif __file__:
-    SELF_DIR = os.path.abspath(os.path.dirname(__file__))
+# if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+#     SELF_DIR = sys._MEIPASS
+# elif __file__:
+#     SELF_DIR = os.path.abspath(os.path.dirname(__file__))
+
+SELF_DIR = os.path.join(os.path.expanduser("~"), "Peek", "ffmpeg")
+
+# make dir recursively if not exists
+os.makedirs(SELF_DIR, exist_ok=True)
+
 LOCK_FILE = os.path.join(SELF_DIR, "lock.file")
 
 

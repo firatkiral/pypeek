@@ -25,7 +25,7 @@ DisableProgramGroupPage=yes
 InfoBeforeFile=C:\Users\firat\Repo\pypeek\data\art\desc.txt
 ;InfoAfterFile=C:\Users\firat\Repo\pypeek\req.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
-PrivilegesRequired=lowest
+;PrivilegesRequired=lowest
 ;PrivilegesRequiredOverridesAllowed=dialog
 OutputDir=C:\Users\firat\Desktop
 OutputBaseFilename=peek_setup
@@ -51,4 +51,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
+
+[UninstallDelete]
+Type: filesandordirs; Name: "{%USERPROFILE}\Peek"
 
