@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Peek"
-#define MyAppVersion "2.7.5"
+#define MyAppVersion "2.7.6"
 #define MyAppPublisher "Creative Tools"
 #define MyAppURL "https://github.com/firatkiral/pypeek"
 #define MyAppExeName "Peek.exe"

@@ -368,7 +368,7 @@ class DrawOver(QDialog):
             painter.end()
             self.canvas_widget.show()
             pixmap.save(drawover_image_path, "png")
-        if self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
+        elif self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
             range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
