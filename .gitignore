@@ -3,4 +3,5 @@
 /.vscode
 /dist
 /build
+/src/pypeek/bin
 __pycache__
