@@ -468,7 +468,6 @@ class DrawOver(QDialog):
         layout = QVBoxLayout()
         layout.setSpacing(4)
         layout.addLayout(slider_layout)
-        layout.addLayout(range_layout)
         timeline_widget = QWidget()
         # timeline_widget.setStyleSheet( "QWidget {background-color: #2a2a2a; border-radius: 5px; padding: 5px;}")
         timeline_widget.setLayout(layout)

@@ -52,11 +52,11 @@ QRangeSlider #Head {
     background: transparent;
 }
 QRangeSlider #Span{
-    border-top: 4px solid #555;
+    border-top: 4px solid #666;
     background: transparent;
 }
 QRangeSlider #Span:active  {
-    border-top: 2px solid #555;
+    border-top: 2px solid #666;
     background: transparent;
 }
 QRangeSlider #Tail {
@@ -67,8 +67,8 @@ QRangeSlider > QSplitter::handle {
     background: transparent;
     width: 0px;
     height: 0px;
-    border-top: 0px solid #555;
-    border-bottom: 18px solid #555;
+    border-top: 0px solid #888;
+    border-bottom: 18px solid #888;
     border-right: 6px solid #333;
     border-left: 6px solid #333;
 }
