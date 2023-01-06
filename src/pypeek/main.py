@@ -32,6 +32,7 @@ class PyPeek(QMainWindow):
         self.capture.countdown_signal.connect(self.update_countdown_ui)
         self.capture.run_timer_signal.connect(self.update_timer_ui)
         self.capture.minimize_to_tray_signal.connect(self.do_minimize_to_tray)
+        self.capture.hide_app_signal.connect(self.hide)
 
         self.capture.show_cursor = True
         self.capture.fullscreen = True
@@ -488,8 +489,7 @@ class PyPeek(QMainWindow):
         if not self.capture.fullscreen:
             self.setFixedSize(self.record_width, self.record_height)
         else:
-            if not self.minimize_to_tray:
-                self.setFixedSize(130, self.minimum_header_height)
+            self.setFixedSize(132, self.minimum_header_height)
         
     def end_capture_ui(self):
         self.tray_icon.hide()
@@ -601,7 +601,7 @@ class PyPeek(QMainWindow):
         self.close()
         self.destroy()
 
-    def do_minimize_to_tray(self, show_notification = False):
+    def do_minimize_to_tray(self, show_notification = True):
         if self.minimize_to_tray:
             self.hide()
             self.tray_icon.show()
@@ -888,7 +888,8 @@ class Capture(QThread):
     countdown_signal = Signal(int)
     run_timer_signal = Signal(int)
     capture_stopped_signal = Signal()
-    minimize_to_tray_signal = Signal(bool)
+    minimize_to_tray_signal = Signal()
+    hide_app_signal = Signal()
 
     def __init__(self, app):
         super().__init__()
@@ -933,7 +934,8 @@ class Capture(QThread):
                 self.capture_stopped_signal.emit()
                 self.quit()
                 return
-            self.fullscreen and self.minimize_to_tray_signal.emit(True)
+            self.fullscreen and self.minimize_to_tray_signal.emit()
+            time.sleep(.2) # give the app time to move to the tray
             self.clear_cache_files()
             self.UID = time.strftime("%Y%m%d-%H%M%S")
             self.capture_count = 0
@@ -968,8 +970,8 @@ class Capture(QThread):
                 self.capture_stopped_signal.emit()
                 self.quit()
                 return
-            self.fullscreen and self.minimize_to_tray_signal.emit(False)
-            time.sleep(.1)
+            self.fullscreen and self.hide_app_signal.emit()
+            time.sleep(.2) # give app time to hide
             filepath = self._snapshot()
             self.snapshot_done_signal.emit(filepath)
 
