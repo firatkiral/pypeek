@@ -39,7 +39,7 @@ class PyPeek(QMainWindow):
         self.capture.fps = 15
         self.capture.quality = "md" # md, hi
         self.capture.delay = 3
-        self.hide_on_record = True
+        self.minimize_to_tray = True
         self.record_width = 600
         self.record_height = 400
         self.pos_x = 100
@@ -240,7 +240,7 @@ class PyPeek(QMainWindow):
 
     def create_settings_widget(self):
         self.cursor_widget = PyPeek.create_row_widget("Capture Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
-        self.hide_app_widget = PyPeek.create_row_widget("Hide App", "Hide the app while recording fullscreen", PyPeek.create_checkbox("", self.hide_on_record, self.set_hide_on_record ))
+        self.hide_app_widget = PyPeek.create_row_widget("Minimize App To Tray", "Minimize app to tray when recording", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
@@ -333,7 +333,7 @@ class PyPeek(QMainWindow):
         config.read(config_file)
 
         self.capture.show_cursor = config.getboolean('capture', 'show_cursor', fallback=True)
-        self.hide_on_record = config.getboolean('capture', 'hide_on_record', fallback=True)
+        self.minimize_to_tray = config.getboolean('capture', 'minimize_to_tray', fallback=True)
         self.capture.fullscreen = config.getboolean('capture', 'fullscreen', fallback=True)
         self.capture.v_ext = config.get('capture', 'v_ext', fallback='gif')
         self.capture.fps = config.getint('capture', 'fps', fallback=15)
@@ -360,7 +360,7 @@ class PyPeek(QMainWindow):
 
         config['capture'] = {
             'show_cursor': str(self.capture.show_cursor),
-            'hide_on_record': str(self.hide_on_record),
+            'minimize_to_tray': str(self.minimize_to_tray),
             'fullscreen': str(self.capture.fullscreen),
             'v_ext': self.capture.v_ext,
             'fps': str(self.capture.fps),
@@ -389,7 +389,7 @@ class PyPeek(QMainWindow):
 
     def reset_settings(self):
         self.capture.show_cursor = True
-        self.hide_on_record = True
+        self.minimize_to_tray = True
         self.capture.fullscreen = True
         self.capture.v_ext = "gif"
         self.capture.fps = 15
@@ -508,6 +508,7 @@ class PyPeek(QMainWindow):
         self.stop_button.setText(f' {value}')
         if value == 0:
             self.stop_button.setText("0:00")
+            self.showMinimized()
     
     def update_timer_ui(self, value):
         minutes = value // 60
@@ -585,7 +586,7 @@ class PyPeek(QMainWindow):
         self.destroy()
 
     def hide_app(self):
-        if self.capture.fullscreen and self.hide_on_record:
+        if self.capture.fullscreen and self.minimize_to_tray:
             self.hide()
             self.tray_icon.show()
     
@@ -614,8 +615,8 @@ class PyPeek(QMainWindow):
     def set_framerate(self, value):
         self.capture.fps = value
     
-    def set_hide_on_record(self, value):
-        self.hide_on_record = value
+    def set_minimize_to_tray(self, value):
+        self.minimize_to_tray = value
     
     def set_delay_start(self, value):
         self.capture.delay = value
@@ -977,6 +978,7 @@ class Capture(QThread):
             return False
         
         return True
+
     def record(self):
         self.mode = "record"
         self.start()
