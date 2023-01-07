@@ -168,7 +168,7 @@ class DrawOver(QDialog):
 
         self.resize(window_width, window_height)
         self.set_tool("select")
-        self.setFocus()
+        # self.setFocus()
 
     def zoom_in(self):
         scale_tr = QTransform()

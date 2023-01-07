@@ -481,8 +481,8 @@ class PyPeek(QMainWindow):
         self.stop_button.show()
         self.record_button_grp.hide()
         self.record_button.setDisabled(True)
-        self.record_button.setIconSize(QSize(0, 0))
-        self.record_button.setText("Working...")
+        self.record_button.setIcon(QIcon(f"{app_path}/icon/in-progress.png"))
+        self.record_button.setText("")
         # self.snapshot_button.setDisabled(True)
         self.format_button.setDisabled(True)
         # self.fullscreen_button.setDisabled(True)
@@ -506,7 +506,7 @@ class PyPeek(QMainWindow):
         self.stop_button.hide()
         self.record_button.setDisabled(False)
         self.record_button.setText(self.capture.v_ext.upper())
-        self.record_button.setIconSize(QSize(20, 20))
+        self.record_button.setIcon(QIcon(f"{app_path}/icon/record-fill.png"))
         self.stop_button.setText("0:00")
         # self.snapshot_button.setDisabled(False)
         self.format_button.setDisabled(False)
@@ -581,10 +581,11 @@ class PyPeek(QMainWindow):
         drawover_res = drawover.exec()
         self.update_drawover_settings(drawover)
         self.show()
+        self.repaint()
         if drawover_res == 0:
             self.end_capture_ui()
             return
-
+        
         self.capture.encode(drawover.encode_options)
         drawover.deleteLater()
 
@@ -938,6 +939,7 @@ class Capture(QThread):
         self.true_fps = 15 # Takes dropped / missed frames into account, otherwise it will play faster on drawover
         self.delay = 0
         self.duration = 0
+        self.progress_range = (0, 100)
 
     def run(self):
         self.halt = False
@@ -973,9 +975,12 @@ class Capture(QThread):
             self.true_fps = int((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time))+0.5)
             self.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
-            self.progress_signal.emit("Working...")
+            self.progress_signal.emit("%0")
+            self.progress_range = (0, 100)
             if self.encode_options and self.encode_options["drawover_image_path"]:
+                self.progress_range = (0, 50)
                 self._drawover()
+                self.progress_range = (50, 100)
             video_file = self.encode_video()
             self.encoding_done_signal.emit(video_file)
         elif self.mode == "snapshot":
@@ -1025,9 +1030,8 @@ class Capture(QThread):
         drawover_pixmap = QPixmap(self.encode_options["drawover_image_path"])
         pos = QPoint()
         rng = self.encode_options["drawover_range"] or (0, self.capture_count)
-        map_value = lambda x, in_min, in_max, out_min, out_max: (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
         for i in range(*rng):
-            self.progress_signal.emit(f"%{math.ceil(map_value(i, rng[0], rng[1]-1, 0, 100))}")
+            self.progress_signal.emit(f"%{math.ceil(Capture.map_range(i, rng[0], rng[1]-1, self.progress_range[0], self.progress_range[1]))}")
             filename = f'{self.current_cache_folder}/pypeek_{self.UID}_{str(i).zfill(6)}.jpg'
             pixmap = QPixmap(filename)
             painter = QPainter(pixmap)
@@ -1049,17 +1053,20 @@ class Capture(QThread):
         systemcall += " -vframes " + str(vframes)
         systemcall += " "+self.ffmpeg_flags[self.v_ext + self.quality]
         systemcall += " "+str(vidfile)
+        systemcall += " -progress pipe:1"
 
         try:
-            proc = subprocess.Popen(systemcall, shell=True)
-            progress = ["", ".", "..", "..."]
-            idx = 0
-            while proc.poll() is None:
-                self.progress_signal.emit("Working" + progress[idx])
-                idx = (idx + 1) % 4
-                time.sleep(.4)
-            
-
+            process = subprocess.Popen(systemcall, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
+            while True:
+                realtime_output = process.stdout.readline()
+                if realtime_output == '' and process.poll() is not None:
+                    break
+                if realtime_output:
+                    if "frame=" in realtime_output:
+                        frame = realtime_output.split("frame=")[1].split(" ")[0]
+                        if frame:
+                            percent = math.ceil(Capture.map_range(int(frame), start_number, vframes, self.progress_range[0], self.progress_range[1]))
+                            self.progress_signal.emit(f"%{percent}")
         except subprocess.CalledProcessError as e:
             vidfile = None
 
@@ -1110,6 +1117,10 @@ class Capture(QThread):
 
         screenshot.save(file_path, 'jpg', 100)
         return file_path
+    
+    @staticmethod
+    def map_range(value, in_min, in_max, out_min, out_max):
+        return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 class CheckUpdate(QThread):
     update_check_done_signal = Signal(str) 
