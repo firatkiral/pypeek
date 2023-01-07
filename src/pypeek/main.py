@@ -48,6 +48,7 @@ class PyPeek(QMainWindow):
         self.minimize_to_tray = False
         self.check_update_on_startup = True
         self.needs_restart = False
+        self.last_save_path =  os.path.expanduser("~")
 
         # drawover settings
         self.drawover_options = {
@@ -106,8 +107,11 @@ class PyPeek(QMainWindow):
         self.move(self.pos_x, self.pos_y)
         self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
         self.show()
-        self.set_mask()
-        self.capture.fullscreen and self.set_fullscreen()
+
+        if self.capture.fullscreen: 
+            self.set_fullscreen()
+        else:
+            self.display_area_size()
         # self.check_update_on_startup and self.check_update()
         self.try_lock()
 
@@ -125,9 +129,13 @@ class PyPeek(QMainWindow):
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
         self.stop_button.hide()
 
+        self.stop_encoding_button = PyPeek.create_button("", f"{app_path}/icon/x.png", "#0d6efd", "#0b5ed7", "#0a58ca")
+        self.stop_encoding_button.setIconSize(QSize(16, 16))
+        self.stop_encoding_button.clicked.connect(self.stop_encoding)
+        self.stop_encoding_button.hide()
+
         self.fullscreen_button = PyPeek.create_button("", f"{app_path}/icon/display.png")
         self.fullscreen_button.clicked.connect(lambda: self.set_fullscreen(not self.capture.fullscreen))
-
 
         self.format_button = PyPeek.create_button("", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         self.format_button.setStyleSheet( self.format_button.styleSheet() + " QPushButton::menu-indicator {subcontrol-position: center;}" )
@@ -175,7 +183,7 @@ class PyPeek(QMainWindow):
         elif self.capture.v_ext == "webm":
             self.webm_radio.setChecked(True)
 
-        self.record_button_grp = PyPeek.make_group_button(self.record_button, self.format_button)
+        self.record_button_grp = PyPeek.make_group_button(self.record_button, self.format_button, self.stop_encoding_button)
 
         self.settings_button = PyPeek.create_button("", f"{app_path}/icon/gear.png")
         # self.settings_button.setFixedSize(30, 30)
@@ -354,6 +362,7 @@ class PyPeek(QMainWindow):
         self.record_height = config.getint('capture', 'height', fallback=400)
         self.pos_x = config.getint('capture', 'pos_x', fallback=100)
         self.pos_y = config.getint('capture', 'pos_y', fallback=100)
+        self.last_save_path = config.get('capture', 'last_save_path', fallback=self.last_save_path)
         self.check_update_on_startup = config.getboolean('capture', 'check_update_on_startup', fallback=True)
         self.drawover_options['current_tool'] = config.get('drawover', 'current_color', fallback='select')
         self.drawover_options['current_shape'] = config.get('drawover', 'current_shape', fallback='line')
@@ -381,6 +390,7 @@ class PyPeek(QMainWindow):
             'height': str(self.record_height),
             'pos_x': str(self.pos().x()),
             'pos_y': str(self.pos().y()),
+            'last_save_path': self.last_save_path,
             'check_update_on_startup': str(self.check_update_on_startup),
         }
         config['drawover'] = {
@@ -410,6 +420,7 @@ class PyPeek(QMainWindow):
         self.record_height = 400
         self.pos_x = 100
         self.pos_y = 100
+        self.last_save_path = os.path.expanduser('~')
         self.check_update_on_startup = True
         self.drawover_options = {
             'current_tool': "select",
@@ -478,28 +489,34 @@ class PyPeek(QMainWindow):
         self.record_button.setText(f"{self.capture.v_ext.upper()}")
 
     def prepare_capture_ui(self):
+        # incase info widget showing
+        self.body_layout.setCurrentIndex(0)
+        self.timer.stop()
+
         self.stop_button.show()
         self.record_button_grp.hide()
         self.record_button.setDisabled(True)
         self.record_button.setIcon(QIcon(f"{app_path}/icon/in-progress.png"))
-        self.record_button.setText("")
-        # self.snapshot_button.setDisabled(True)
-        self.format_button.setDisabled(True)
-        # self.fullscreen_button.setDisabled(True)
-        # self.settings_button.setDisabled(True)
-        self.snapshot_button.hide()
-        self.fullscreen_button.hide()
-        self.settings_button.hide()
-        self.close_button.hide()
+        self.record_button.setText("%0")
+        self.format_button.hide()
+        self.stop_encoding_button.show()
+        
         self.hide_grips()
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
-        self.capture.width = self.record_area_widget.width()
+        self.capture.width = self.record_area_widget.width() 
         self.capture.height = self.record_area_widget.height()
         if not self.capture.fullscreen:
             self.setFixedSize(self.record_width, self.record_height)
+            self.snapshot_button.setDisabled(True)
+            self.fullscreen_button.setDisabled(True)
+            self.settings_button.setDisabled(True)
         else:
             self.setFixedSize(132, self.minimum_header_height)
-        
+            self.snapshot_button.hide()
+            self.fullscreen_button.hide()
+            self.settings_button.hide()
+            self.close_button.hide()
+            
     def end_capture_ui(self):
         self.tray_icon.hide()
         self.record_button_grp.show()
@@ -508,11 +525,13 @@ class PyPeek(QMainWindow):
         self.record_button.setText(self.capture.v_ext.upper())
         self.record_button.setIcon(QIcon(f"{app_path}/icon/record-fill.png"))
         self.stop_button.setText("0:00")
-        # self.snapshot_button.setDisabled(False)
         self.format_button.setDisabled(False)
-        # self.fullscreen_button.setDisabled(False)
-        # self.settings_button.setDisabled(False)
-        # self.close_button.setDisabled(False)
+        self.format_button.show()
+        self.stop_encoding_button.hide()
+        self.snapshot_button.setDisabled(False)
+        self.fullscreen_button.setDisabled(False)
+        self.settings_button.setDisabled(False)
+        self.close_button.setDisabled(False)
         self.snapshot_button.show()
         self.fullscreen_button.show()
         self.settings_button.show()
@@ -527,6 +546,7 @@ class PyPeek(QMainWindow):
         else:
             self.setFixedWidth(self.minimum_header_width)
         self.capture.clear_cache_files()
+        self.show()
 
     def update_countdown_ui(self, value):
         self.stop_button.setText(f' {value}')
@@ -549,24 +569,24 @@ class PyPeek(QMainWindow):
         self.hide()
         self.tray_icon.hide()
         drawover = DrawOver(filepath, self.drawover_options, self.capture.true_fps, self)
-        drawover_res = drawover.exec()
+        drawover.show()
+    
+    def snapshot_drawover_done(self, drawover):
         self.update_drawover_settings(drawover)
-        self.show()
-        if drawover_res == 0:
-            self.end_capture_ui()
-            return
 
-        if drawover_res == 1 and drawover.encode_options:
+        filepath = drawover.image_path
+        if drawover.encode_options and drawover.encode_options["drawover_image_path"]:
             filepath = self.capture.snapshot_drawover(drawover.encode_options["drawover_image_path"])
             
         filename = os.path.basename(filepath)
-        new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.expanduser("~") + "/" + filename, "Images (*.jpg)")
+        self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
+        new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), "Images (*.jpg)")
         
         if new_filepath[0]:
             shutil.move(filepath, new_filepath[0])
+            self.last_save_path = os.path.dirname(new_filepath[0])
         
         self.end_capture_ui()
-        drawover.deleteLater()
 
     def record(self):
         self.prepare_capture_ui()
@@ -578,25 +598,30 @@ class PyPeek(QMainWindow):
         self.hide()
         self.tray_icon.hide()
         drawover = DrawOver(cache_folder, self.drawover_options, self.capture.true_fps, self)
-        drawover_res = drawover.exec()
+        drawover.show()
+    
+    def recording_drawover_done(self, drawover):
         self.update_drawover_settings(drawover)
         self.show()
-        self.repaint()
-        if drawover_res == 0:
-            self.end_capture_ui()
-            return
-        
         self.capture.encode(drawover.encode_options)
-        drawover.deleteLater()
 
     def encoding_done(self, filepath):
         if filepath:
             filename = os.path.basename(filepath)
-            new_filepath = QFileDialog.getSaveFileName(self, "Save Video", os.path.expanduser("~") + "/" + filename, f"Videos (*.{self.capture.v_ext})")
+            self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
+            new_filepath = QFileDialog.getSaveFileName(self, "Save Video", os.path.join(self.last_save_path, filename), f"Videos (*.{self.capture.v_ext})")
             
             if new_filepath[0]:
                 shutil.move(filepath, new_filepath[0])
+                self.last_save_path = os.path.dirname(new_filepath[0])
         
+        self.end_capture_ui()
+
+    def stop_capture(self):
+        self.capture.stop()
+
+    def stop_encoding(self):
+        self.capture.terminate()
         self.end_capture_ui()
 
     def set_mask(self):
@@ -610,6 +635,12 @@ class PyPeek(QMainWindow):
         self.body_layout.setCurrentIndex(0)
         self.show()
 
+    def display_area_size(self):
+        self.clearMask()
+        self.info_size_label.setText(f"{self.body_widget.width()}x{self.body_widget.height()}")
+        self.body_layout.setCurrentIndex(1)
+        self.timer.start(2000)
+
     def close_app(self):
         self.close()
         self.destroy()
@@ -619,9 +650,6 @@ class PyPeek(QMainWindow):
             self.hide()
             self.tray_icon.show()
             show_notification and self.tray_icon.showMessage("Peek is recording!", "Peek minimized to tray icon and running in background", QSystemTrayIcon.MessageIcon.Information, 6000)
-    
-    def stop_capture(self):
-        self.capture.stop()
 
     def set_quality(self, value):
         self.capture.quality = value
@@ -637,7 +665,7 @@ class PyPeek(QMainWindow):
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
-            self.set_mask()
+            self.display_area_size()
         
         self.capture.fullscreen = value
         self.block_resize_event = False
@@ -724,11 +752,7 @@ class PyPeek(QMainWindow):
         self.record_height = event.size().height()
         self.record_width = event.size().width()
 
-        self.info_size_label.setText(f"{self.body_widget.width()}x{self.body_widget.height()}")
-        self.body_layout.setCurrentIndex(1)
-
-        self.clearMask()
-        self.timer.start(1000)
+        self.display_area_size()
 
     def closeEvent(self, event):
         if self.capture.isRunning():
@@ -818,14 +842,16 @@ class PyPeek(QMainWindow):
         return btn
     
     @staticmethod
-    def make_group_button(button1, button2):
+    def make_group_button(button1, button2, button3):
         group = QHBoxLayout()
         group.setContentsMargins(0, 0, 0, 0)
         group.setSpacing(0)
         group.addWidget(button1)
         group.addWidget(button2)
+        group.addWidget(button3)
         button1.setStyleSheet(button1.styleSheet() + "QPushButton {border-top-right-radius: 0; border-bottom-right-radius: 0; border-right: none;}")
         button2.setStyleSheet(button2.styleSheet() + "QPushButton {border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none;}")
+        button3.setStyleSheet(button2.styleSheet() + "QPushButton {border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none;}")
         group_widget = QWidget()
         group_widget.setLayout(group)
         return group_widget
@@ -892,7 +918,6 @@ class PyPeek(QMainWindow):
             msg.setCheckBox(checkbox)
 
         return msg.exec(), checkbox.isChecked() if checkbox else False
-    
     
 class Capture(QThread):
     recording_done_signal = Signal(str)
@@ -1030,14 +1055,18 @@ class Capture(QThread):
         drawover_pixmap = QPixmap(self.encode_options["drawover_image_path"])
         pos = QPoint()
         rng = self.encode_options["drawover_range"] or (0, self.capture_count)
+        start_time = time.time()
         for i in range(*rng):
-            self.progress_signal.emit(f"%{math.ceil(Capture.map_range(i, rng[0], rng[1]-1, self.progress_range[0], self.progress_range[1]))}")
             filename = f'{self.current_cache_folder}/pypeek_{self.UID}_{str(i).zfill(6)}.jpg'
             pixmap = QPixmap(filename)
             painter = QPainter(pixmap)
             painter.drawPixmap(pos, drawover_pixmap)
             painter.end()
             pixmap.save(filename, "jpg", 100)
+            passed_time = time.time()-start_time
+            if passed_time > .3 or i == rng[1]-1 or i == rng[0]:
+                self.progress_signal.emit(f"%{math.ceil(Capture.map_range(i, rng[0], rng[1]-1, self.progress_range[0], self.progress_range[1]))}")
+                start_time = time.time()
 
     def encode_video(self):
         start_number = 0
@@ -1065,7 +1094,7 @@ class Capture(QThread):
                     if "frame=" in realtime_output:
                         frame = realtime_output.split("frame=")[1].split(" ")[0]
                         if frame:
-                            percent = math.ceil(Capture.map_range(int(frame), start_number, vframes, self.progress_range[0], self.progress_range[1]))
+                            percent = math.ceil(Capture.map_range(int(frame), 0, vframes, self.progress_range[0], self.progress_range[1]))
                             self.progress_signal.emit(f"%{percent}")
         except subprocess.CalledProcessError as e:
             vidfile = None

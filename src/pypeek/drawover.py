@@ -11,23 +11,25 @@ if getattr(sys, 'frozen', False):
 elif __file__:
     app_path = os.path.abspath(os.path.dirname(__file__))
 
-class DrawOver(QDialog):
+class DrawOver(QMainWindow):
     def __init__(self, image_path="", options=None, frame_rate=15, parent=None):
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        # self.setWindowModality(Qt.ApplicationModal)
+        self.setWindowModality(Qt.ApplicationModal)
         self.setWindowFlags(Qt.WindowType.Window)
         self.setWindowTitle("Edit")
         self.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
-        self.setStyleSheet("QDialog {background-color: #333; color: #fff;}")
+        self.setStyleSheet("QMainWindow {background-color: #333; color: #fff;}")
 
         self.image_width = 800
         self.image_height = 600
+        self.accept = False
 
         self.is_sequence = False
         self.encode_options = None
         self.out_filename = "drawover.png"
         self.out_path = f'{tempfile.gettempdir()}/pypeek'
+        self.image_path = image_path
         if os.path.isdir(image_path):
             self.out_path = image_path
             image_dir = QDir(image_path)
@@ -135,10 +137,10 @@ class DrawOver(QDialog):
 
         save_button = DrawOver.create_button("Save", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         save_button.setFixedWidth(100)
-        save_button.clicked.connect(self.save_drawover_file)
+        save_button.clicked.connect(self.save)
         cancel_button = DrawOver.create_button("Cancel")
         cancel_button.setFixedWidth(100)
-        cancel_button.clicked.connect(self.reject)
+        cancel_button.clicked.connect(self.cancel)
         save_layout = QHBoxLayout()
         save_layout.setSpacing(10)
         save_layout.setContentsMargins(20,20,20,20)
@@ -156,7 +158,10 @@ class DrawOver(QDialog):
         self.is_sequence and main_layout.addWidget(self.create_timeline(), 0)
         main_layout.addLayout(save_layout, 0)
 
-        self.setLayout(main_layout)
+        main_widget = QWidget()
+        main_widget.setLayout(main_layout)
+
+        self.setCentralWidget(main_widget)
 
         window_width = self.image_width + 40
         window_height = self.image_height+220 if self.is_sequence else self.image_height+130
@@ -355,7 +360,10 @@ class DrawOver(QDialog):
         self.bg_pixmap = QPixmap(os.path.join(self.out_path, image_filename))
         self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.AspectRatioMode.KeepAspectRatio))
 
-    def save_drawover_file(self):
+    def cancel(self):
+        self.close()
+
+    def save(self):
         if len(self.items) > 0:
             range = (self.slider.minimum(), self.slider.maximum() + 1) if self.slider else None
             drawover_image_path = os.path.join(self.out_path, self.out_filename)
@@ -372,7 +380,13 @@ class DrawOver(QDialog):
             range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
-        self.accept()
+        self.accept = True
+        self.close()
+        
+        if self.slider:
+            self.parent().recording_drawover_done(self)
+        else:
+            self.parent().snapshot_drawover_done(self)
 
     def create_canvas(self):
         canvas = QLabel()
@@ -886,6 +900,9 @@ class DrawOver(QDialog):
         if self.current_tool == "text" and self.current_text_item is not None:
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
 
+    def closeEvent(self, event):
+        not self.accept and self.parent().end_capture_ui()
+        
     @staticmethod
     def create_button(text="", icon=None, bgcolor= "#3e3e3e", hovercolor = "#494949", pressedcolor="#434343", callback=None):
         btn = QPushButton(text)
