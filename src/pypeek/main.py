@@ -64,7 +64,7 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.7.7"
+        self.version = "2.7.8"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -335,10 +335,14 @@ class PyPeek(QMainWindow):
         
     def create_tray_icon(self):
         tray_button = QSystemTrayIcon()
-        icon = QIcon(f"{app_path}/icon/stop-fill.png")
+        icon = QIcon(f"{app_path}/icon/pypeek-recording.png")
         tray_button.setIcon(icon)
         tray_button.setToolTip("Stop Capture")
-        tray_button.activated.connect(self.stop_capture)
+        # tray_button.activated.connect(self.stop_capture)
+
+        menu = QMenu()
+        menu.addAction("Stop", self.stop_capture)
+        tray_button.setContextMenu(menu)
 
         return tray_button
 
@@ -691,34 +695,10 @@ class PyPeek(QMainWindow):
         self.capture.show_cursor = value
 
     def show_settings(self, value):
-        self.block_resize_event = True
-        self.timer.stop()
         if value:
             self.settings_widget.show()
-            # self.body_layout.setCurrentIndex(2)
-            # self.clearMask()
-            # self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear-fill.png"))
-            # self.record_button_grp.hide()
-            # self.snapshot_button.hide()
-            # self.fullscreen_button.hide()
-            # if self.capture.fullscreen:
-            #     self.setMaximumSize(16777215, 16777215) # remove fixed height
-            #     self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
-            # self.resize(self.settings_width, self.settings_height)
         else:
             self.settings_widget.hide()
-            # self.body_layout.setCurrentIndex(0)
-            # self.settings_button.setIcon(QIcon(f"{dir_path}/icon/gear.png"))
-            # self.record_button_grp.show()
-            # self.snapshot_button.show()
-            # self.fullscreen_button.show()
-            # if self.capture.fullscreen:
-            #     self.setFixedSize(self.minimum_header_width, self.minimum_header_height)
-            # else:
-            #     self.resize(self.record_width, self.record_height)
-            # self.set_mask()
-            
-        self.block_resize_event = False
 
     def mousePressEvent(self, event):
         # self.drag_start_position = event.globalPosition()

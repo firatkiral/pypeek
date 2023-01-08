@@ -2,14 +2,14 @@
 
 <br/>
 
-# PyPeek - an animated GIF recorder
+# PyPeek - Screen Capture & Recording With Annotations
 
-### Simple screen recorder with an easy to use interface.
+### Simple screen recorder with an easy to use interface and annotation features.
 
 <br/>
 <br/>
 
-![PyPeek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/screenshot/pypeek-recording-itself.gif)
+![PyPeek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/asset/file/pypeek-recording-itself.gif)
 
 <br/>
 <br/>
@@ -18,7 +18,7 @@
 
 - Python 3.10 or later
 
-- Windows, macOS, Linux
+- Windows, macOS, Linux on Xorg ([How to switch to Xorg?](https://itsfoss.com/switch-xorg-wayland/))
 
 <br/>
 

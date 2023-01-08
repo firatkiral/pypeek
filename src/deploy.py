@@ -7,7 +7,7 @@ PLATFORM_ZIP_FILES = {
 }
 
 def get_ffmpeg():
-    zip_file = f"data/ffmpeg/{PLATFORM_ZIP_FILES[sys.platform]}"
+    zip_file = f"asset/data/ffmpeg/{PLATFORM_ZIP_FILES[sys.platform]}"
     install_dir = "dist/ffmpeg"
     os.makedirs(install_dir, exist_ok=True)
     with zipfile.ZipFile(zip_file, mode="r") as zipf:
