@@ -64,7 +64,7 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.7.6"
+        self.version = "2.7.7"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -721,18 +721,20 @@ class PyPeek(QMainWindow):
         self.block_resize_event = False
 
     def mousePressEvent(self, event):
-        self.drag_start_position = event.globalPosition()
+        # self.drag_start_position = event.globalPosition()
+        window = self.window().windowHandle()
+        window.startSystemMove()
 
-    def mouseMoveEvent(self, event):
-        if not self.drag_start_position:
-            return
+    # def mouseMoveEvent(self, event):
+    #     if not self.drag_start_position:
+    #         return
 
-        diff = event.globalPosition() - self.drag_start_position
-        self.move(self.x() + int(diff.x()), self.y() + int(diff.y()))
-        self.drag_start_position = event.globalPosition()
+    #     diff = event.globalPosition() - self.drag_start_position
+    #     self.move(self.x() + int(diff.x()), self.y() + int(diff.y()))
+    #     self.drag_start_position = event.globalPosition()
 
-    def mouseReleaseEvent(self, event):
-        self.drag_start_position = None
+    # def mouseReleaseEvent(self, event):
+    #     self.drag_start_position = None
 
     def moveEvent(self, event):
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
