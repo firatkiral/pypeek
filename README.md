@@ -18,7 +18,7 @@
 
 - Python 3.10 or later
 
-- Windows, macOS, Linux on Xorg ([How to switch to Xorg?](https://itsfoss.com/switch-xorg-wayland/))
+- Windows, macOS, Linux on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
 
 <br/>
 
