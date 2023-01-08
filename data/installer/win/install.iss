@@ -22,14 +22,14 @@ DefaultDirName={autopf}\{#MyAppName}
 ;DisableDirPage=yes
 DisableProgramGroupPage=yes
 ;LicenseFile=C:\Users\firat\Repo\pypeek\LICENSE
-InfoBeforeFile=C:\Users\firat\Repo\pypeek\data\art\desc.txt
+InfoBeforeFile=..\..\art\desc.txt
 ;InfoAfterFile=C:\Users\firat\Repo\pypeek\req.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 ;PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Users\firat\Desktop
-OutputBaseFilename=peek_setup
-SetupIconFile=C:\Users\firat\Repo\pypeek\src\pypeek\icon\pypeek.ico
+OutputDir=..\..\..\dist
+OutputBaseFilename="peek{#MyAppVersion}_setup"
+SetupIconFile=..\..\..\src\pypeek\icon\pypeek.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -41,7 +41,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}";
 
 [Files]
-Source: "C:\Users\firat\Repo\pypeek\dist\Peek\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\..\..\dist\Peek\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 

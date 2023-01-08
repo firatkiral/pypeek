@@ -40,7 +40,7 @@ packages = ["src/pypeek"]
 exclude = [
   "/pypeek-onefile.spec",
   "/pypeek.spec",
-  "/asset",
+  "/data",
   "/req.txt",
 ]
 
