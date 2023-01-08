@@ -166,14 +166,17 @@ class DrawOver(QMainWindow):
         window_width = self.image_width + 40
         window_height = self.image_height+220 if self.is_sequence else self.image_height+130
         screen_size = QGuiApplication.primaryScreen().size()
-        if window_width > screen_size.width():
-            window_width = screen_size.width() - 100
-        if window_height > screen_size.height():
-            window_height = screen_size.height() - 100
+        pref_width = screen_size.width() * 0.8
+        pref_height = screen_size.height() * 0.8
+        if window_width > pref_width:
+            window_width = pref_width
+        if window_height > pref_height:
+            window_height = pref_height
 
         self.resize(window_width, window_height)
+        self.move((screen_size.width() - self.width()) / 2, (screen_size.height() - self.height()) / 2)
         self.set_tool("select")
-        # self.setFocus()
+        self.setFocus()
 
     def zoom_in(self):
         scale_tr = QTransform()
@@ -372,7 +375,9 @@ class DrawOver(QMainWindow):
             pixmap = QPixmap(self.canvas_width, self.canvas_height)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
-            self.scene.render(painter)
+            # canvas position in self.view
+            canvas_pos = self.view.mapFromScene(self.canvas_widget.pos())
+            self.scene.render(painter, QRectF(), QRectF(0, 0, self.canvas_width, self.canvas_height))
             painter.end()
             self.canvas_widget.show()
             pixmap.save(drawover_image_path, "png")
@@ -841,6 +846,8 @@ class DrawOver(QMainWindow):
         if not self.dragging:
             return
         self.end_point = e.position()
+        self.end_point.setX(min(self.image_width, max(0, self.end_point.x())))
+        self.end_point.setY(min(self.image_height, max(0, self.end_point.y())))
         if self.current_tool == "select" and self.select_start_point is not None:
             delta = self.end_point - self.select_start_point
             self.view.horizontalScrollBar().setValue(self.view.horizontalScrollBar().value() - delta.x())

@@ -64,14 +64,13 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.7.8"
+        self.version = "2.7.9"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
         self.minimum_header_width = 355
         self.minimum_header_height = 45
         self.minimum_body_height = 100
-        self.block_resize_event = False
         self.setStyleSheet("* {font-size: 15px; color: #ddd;}")
 
         self.header_widget = self.create_header_widget()
@@ -111,7 +110,7 @@ class PyPeek(QMainWindow):
         if self.capture.fullscreen: 
             self.set_fullscreen()
         else:
-            self.display_area_size()
+            self.show_info_layout()
         # self.check_update_on_startup and self.check_update()
         self.try_lock()
 
@@ -494,8 +493,8 @@ class PyPeek(QMainWindow):
 
     def prepare_capture_ui(self):
         # incase info widget showing
-        self.body_layout.setCurrentIndex(0)
-        self.timer.stop()
+        if self.body_layout.currentIndex() == 1:
+            self.set_mask()
 
         self.stop_button.show()
         self.record_button_grp.hide()
@@ -515,7 +514,9 @@ class PyPeek(QMainWindow):
             self.fullscreen_button.setDisabled(True)
             self.settings_button.setDisabled(True)
         else:
+            self.blockSignals(True)
             self.setFixedSize(132, self.minimum_header_height)
+            self.blockSignals(False)
             self.snapshot_button.hide()
             self.fullscreen_button.hide()
             self.settings_button.hide()
@@ -542,11 +543,9 @@ class PyPeek(QMainWindow):
         self.close_button.show()
         self.show_grips()
         if not self.capture.fullscreen:
-            self.block_resize_event = True
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
-            self.block_resize_event = False
         else:
             self.setFixedWidth(self.minimum_header_width)
         self.capture.clear_cache_files()
@@ -632,14 +631,17 @@ class PyPeek(QMainWindow):
         if self.capture.fullscreen:
             return
         self.timer.stop()
-        self.hide()
+        self.clearFocus()
+        # self.hide()
         empty_region = QRegion(QRect(QPoint(8,43), self.frame.size() - QSize(16, 51)), QRegion.RegionType.Rectangle)
         region = QRegion(QRect(QPoint(-2,-2), self.frame.size() + QSize(4, 4)), QRegion.RegionType.Rectangle)
         self.setMask(region - empty_region)
         self.body_layout.setCurrentIndex(0)
+        self.hide()
         self.show()
+        # QTimer.singleShot(1000, lambda: self.setFocus())
 
-    def display_area_size(self):
+    def show_info_layout(self):
         self.clearMask()
         self.info_size_label.setText(f"{self.body_widget.width()}x{self.body_widget.height()}")
         self.body_layout.setCurrentIndex(1)
@@ -659,7 +661,6 @@ class PyPeek(QMainWindow):
         self.capture.quality = value
 
     def set_fullscreen(self, value=True):
-        self.block_resize_event = True
         if value:
             self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/bounding-box-circles.png"))
             self.setFixedSize(self.minimum_header_width, self.minimum_header_height) # prevent manual resizing height
@@ -669,10 +670,9 @@ class PyPeek(QMainWindow):
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
-            self.display_area_size()
+            self.show_info_layout()
         
         self.capture.fullscreen = value
-        self.block_resize_event = False
 
     def set_framerate(self, value):
         self.capture.fps = value
@@ -723,18 +723,13 @@ class PyPeek(QMainWindow):
         self.frame.setGeometry(0, 0, event.size().width(), event.size().height())
         self.resize_grips()
 
-        if self.block_resize_event:
+        if not event.spontaneous():
             return
-
-        # if event.size().height() < 100:
-        #     self.resize(self.width(), 45)
-        # else:
-        #     self.resize(self.width(), event.size().height())
             
         self.record_height = event.size().height()
         self.record_width = event.size().width()
 
-        self.display_area_size()
+        self.show_info_layout()
 
     def closeEvent(self, event):
         if self.capture.isRunning():
