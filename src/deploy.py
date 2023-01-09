@@ -12,6 +12,5 @@ def deploy():
     subprocess.call(['pyinstaller', 'pypeek.spec', '-y'])
     
 
-
 if __name__ == '__main__':
     deploy()

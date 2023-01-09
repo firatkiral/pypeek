@@ -521,7 +521,6 @@ class DrawOver(QMainWindow):
 
         def clicked(_color):
             _color = _color if _color else QColorDialog.getColor("white", self).toHsv().name()
-            print("white")
             self.pick_color(_color)
             menu.close()
 

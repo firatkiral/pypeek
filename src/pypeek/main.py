@@ -63,7 +63,7 @@ class PyPeek(QMainWindow):
             'text_color': 'black',
             'text_size': 13}
 
-        self.version = "2.7.10"
+        self.version = "2.7.11"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
