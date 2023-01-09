@@ -63,7 +63,7 @@ class PyPeek(QMainWindow):
             'text_color': 'black',
             'text_size': 13}
 
-        self.version = "2.7.12"
+        self.version = "2.7.13"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -74,7 +74,6 @@ class PyPeek(QMainWindow):
 
         # load settings from json file
         self.load_settings()
-        # print(self.pos_x, self.pos_y)
 
         self.header_widget = self.create_header_widget()
         self.body_widget = self.create_body_widget()
@@ -697,7 +696,8 @@ class PyPeek(QMainWindow):
     #     self.drag_start_position = None
 
     def moveEvent(self, event):
-        self.pos_x, self.pos_y = self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
+        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
+        self.pos_x, self.pos_y = PyPeek.get_global_position(self)
 
     def resizeEvent(self, event):
         self.frame.setGeometry(0, 0, event.size().width(), event.size().height())
