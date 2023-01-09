@@ -45,8 +45,8 @@ class PyPeek(QMainWindow):
         self.capture.delay = 3
         self.record_width = 600
         self.record_height = 400
-        self.pos_x = 100
-        self.pos_y = 100
+        self.pos_x = 0
+        self.pos_y = 0
         self.minimize_to_tray = False
         self.check_update_on_startup = True
         self.needs_restart = False
@@ -63,7 +63,7 @@ class PyPeek(QMainWindow):
             'text_color': 'black',
             'text_size': 13}
 
-        self.version = "2.7.11"
+        self.version = "2.7.12"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -74,6 +74,7 @@ class PyPeek(QMainWindow):
 
         # load settings from json file
         self.load_settings()
+        # print(self.pos_x, self.pos_y)
 
         self.header_widget = self.create_header_widget()
         self.body_widget = self.create_body_widget()
@@ -349,8 +350,6 @@ class PyPeek(QMainWindow):
 
     def load_settings(self):
         config_file = os.path.join(user_path, 'pypeek.cfg')
-        if not os.path.exists(config_file):
-            return
 
         config = configparser.ConfigParser()
         config.read(config_file)
@@ -365,8 +364,8 @@ class PyPeek(QMainWindow):
         self.capture.duration = config.getint('capture', 'duration', fallback=0)
         self.record_width = config.getint('capture', 'width', fallback=600)
         self.record_height = config.getint('capture', 'height', fallback=400)
-        self.pos_x = config.getint('capture', 'pos_x', fallback=(QGuiApplication.primaryScreen().size().width() - self.minimum_header_width) / 2)
-        self.pos_y = config.getint('capture', 'pos_y', fallback=QGuiApplication.primaryScreen().size().height() * .8)
+        self.pos_x = config.getint('capture', 'pos_x', fallback=int((QGuiApplication.primaryScreen().size().width() - self.minimum_header_width) / 2))
+        self.pos_y = config.getint('capture', 'pos_y', fallback=int(QGuiApplication.primaryScreen().size().height() * .8))
         self.last_save_path = config.get('capture', 'last_save_path', fallback=self.last_save_path)
         self.check_update_on_startup = config.getboolean('capture', 'check_update_on_startup', fallback=True)
         self.drawover_options['current_tool'] = config.get('drawover', 'current_color', fallback='select')
@@ -393,8 +392,8 @@ class PyPeek(QMainWindow):
             'duration': str(self.capture.duration),
             'width': str(self.record_width),
             'height': str(self.record_height),
-            'pos_x': str(self.pos().x()),
-            'pos_y': str(self.pos().y()),
+            'pos_x': str(self.pos_x),
+            'pos_y': str(self.pos_y),
             'last_save_path': self.last_save_path,
             'check_update_on_startup': str(self.check_update_on_startup),
         }
@@ -413,31 +412,10 @@ class PyPeek(QMainWindow):
             config.write(config_file)
 
     def reset_settings(self):
-        self.capture.show_cursor = True
-        self.minimize_to_tray = False
-        self.capture.fullscreen = True
-        self.capture.v_ext = "gif"
-        self.capture.fps = 15
-        self.capture.quality = "md"
-        self.capture.delay = 3
-        self.capture.duration = 0
-        self.record_width = 600
-        self.record_height = 400
-        self.pos_x = 100
-        self.pos_y = 100
-        self.last_save_path = os.path.expanduser('~')
-        self.check_update_on_startup = True
-        self.drawover_options = {
-            'current_tool': "select",
-            'current_shape': "line",
-            'pen_color': "yellow",
-            'pen_width': 2,
-            'shape_color': "yellow",
-            'shape_width': 2,
-            'text_color': "black",
-            'text_size': 12
-        }
-        self.save_settings()
+        config_file = os.path.join(user_path, 'pypeek.cfg')
+        if os.path.exists(config_file):
+            os.remove(config_file)
+        self.load_settings()
         self.restart()
     
     def update_drawover_settings(self, drawover):
@@ -719,7 +697,7 @@ class PyPeek(QMainWindow):
     #     self.drag_start_position = None
 
     def moveEvent(self, event):
-        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
+        self.pos_x, self.pos_y = self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
 
     def resizeEvent(self, event):
         self.frame.setGeometry(0, 0, event.size().width(), event.size().height())

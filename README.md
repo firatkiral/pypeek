@@ -4,7 +4,7 @@
 
 # PyPeek - Screen Capture & Recording With Annotations
 
-### Simple screen recorder with an easy to use interface and annotation features.
+### Cross platform screen recorder with an easy to use interface and annotation features.
 
 <br/>
 <br/>
