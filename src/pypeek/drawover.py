@@ -520,22 +520,22 @@ class DrawOver(QMainWindow):
         menu.addAction(action)
 
         def clicked(_color):
+            _color = _color if _color else QColorDialog.getColor("white", self).toHsv().name()
+            print("white")
             self.pick_color(_color)
             menu.close()
 
-        for i, color in enumerate(['red', 'limegreen', 'blue', 'yellow', 'cyan', 'magenta', 'white', 'black']):
+        for i, color in enumerate(['red', 'limegreen', 'blue', 'yellow', 'cyan', 'magenta', 'white', 'black', 'picker']):
             color_button = QPushButton()
             color_button.setFixedSize(14, 14)
             color_button.setStyleSheet(f"background-color: {color}; border-radius: 2px;")
-            color_button.clicked.connect(lambda *args, _color=color: clicked(_color))
             action_layout.addWidget(color_button, int(i/3), i%3)
-        
-        pick_button = QPushButton(QIcon(f"{app_path}/icon/eyedropper.png"), "")
-        pick_button.setFixedSize(14, 14)
-        pick_button.setIconSize(QSize(12, 12))
-        pick_button.setStyleSheet(f"background-color: transparent;")
-        action_layout.addWidget(pick_button, 2, 2)
-        pick_button.clicked.connect(clicked)
+            if color == 'picker':
+                color_button.setIcon(QIcon(f"{app_path}/icon/eyedropper.png"))
+                color_button.setContentsMargins(0, 0, 0, 0)
+                color_button.setStyleSheet(f"background-color: transparent;")
+                color = None
+            color_button.clicked.connect(lambda *args, _color=color: clicked(_color))
 
         hbox = QHBoxLayout()
         hbox.setSpacing(3)
@@ -908,7 +908,9 @@ class DrawOver(QMainWindow):
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
 
     def closeEvent(self, event):
-        not self.accept and self.parent().end_capture_ui()
+        if not self.accept:
+            self.parent().update_drawover_settings(self)
+            self.parent().end_capture_ui()
         
     @staticmethod
     def create_button(text="", icon=None, bgcolor= "#3e3e3e", hovercolor = "#494949", pressedcolor="#434343", callback=None):

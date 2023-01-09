@@ -6,6 +6,10 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
+# TODO: Show warning if record duration is set
+# TODO: Increase gif quality
+# TODO: remove ffmpeg and use imageio
+
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = sys._MEIPASS
     os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
@@ -64,7 +68,7 @@ class PyPeek(QMainWindow):
         # load settings from json file
         self.load_settings()
 
-        self.version = "2.7.9"
+        self.version = "2.7.10"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -249,14 +253,14 @@ class PyPeek(QMainWindow):
 
     def create_settings_widget(self):
         self.cursor_widget = PyPeek.create_row_widget("Capture Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
-        self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray", "Minimize app to tray icon when recording", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
+        self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray", "Minimize app to tray icon when recording fullscreen", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
-        self.duration_widget = PyPeek.create_row_widget("Recording Duration", "Set the duration of the recording (0 for unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
+        self.duration_widget = PyPeek.create_row_widget("Recording Limit", "Stop recording after a given time in seconds (0 = unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
         self.update_widget = PyPeek.create_row_widget("Check For Updates", "Check for updates on startup", PyPeek.create_checkbox("", self.check_update_on_startup, self.set_check_update_on_startup))
         self.reset_widget = PyPeek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", PyPeek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = PyPeek.create_row_widget("About", f"PyPeek {self.version}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek"))
+        self.copyright_widget = PyPeek.create_row_widget("About", f"PyPeek {self.version}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek/wiki"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -1109,7 +1113,7 @@ class Capture(QThread):
         screenshot = QScreen.grabWindow(QApplication.instance().primaryScreen())
         if self.show_cursor:
             painter = QPainter(screenshot)
-            painter.drawPixmap(QCursor.pos(), self.cursor_image)
+            painter.drawPixmap(QCursor.pos() - QPoint(7, 5), self.cursor_image)
             painter.end()
         
         pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
