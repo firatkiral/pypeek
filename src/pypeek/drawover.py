@@ -19,7 +19,7 @@ class DrawOver(QMainWindow):
         self.setWindowFlags(Qt.WindowType.Window)
         self.setWindowTitle("Edit")
         self.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
-        self.setStyleSheet("QMainWindow {background-color: #333; color: #fff;}")
+        self.setStyleSheet("* {background-color: #333; color: #fff;}")
 
         self.image_width = 800
         self.image_height = 600

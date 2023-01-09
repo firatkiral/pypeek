@@ -7,8 +7,6 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 # TODO: Show warning if record duration is set
-# TODO: Increase gif quality
-# TODO: remove ffmpeg and use imageio
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = sys._MEIPASS
@@ -65,9 +63,6 @@ class PyPeek(QMainWindow):
             'text_color': 'black',
             'text_size': 13}
 
-        # load settings from json file
-        self.load_settings()
-
         self.version = "2.7.10"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
@@ -76,6 +71,9 @@ class PyPeek(QMainWindow):
         self.minimum_header_height = 45
         self.minimum_body_height = 100
         self.setStyleSheet("* {font-size: 15px; color: #ddd;}")
+
+        # load settings from json file
+        self.load_settings()
 
         self.header_widget = self.create_header_widget()
         self.body_widget = self.create_body_widget()
@@ -367,8 +365,8 @@ class PyPeek(QMainWindow):
         self.capture.duration = config.getint('capture', 'duration', fallback=0)
         self.record_width = config.getint('capture', 'width', fallback=600)
         self.record_height = config.getint('capture', 'height', fallback=400)
-        self.pos_x = config.getint('capture', 'pos_x', fallback=100)
-        self.pos_y = config.getint('capture', 'pos_y', fallback=100)
+        self.pos_x = config.getint('capture', 'pos_x', fallback=(QGuiApplication.primaryScreen().size().width() - self.minimum_header_width) / 2)
+        self.pos_y = config.getint('capture', 'pos_y', fallback=QGuiApplication.primaryScreen().size().height() * .8)
         self.last_save_path = config.get('capture', 'last_save_path', fallback=self.last_save_path)
         self.check_update_on_startup = config.getboolean('capture', 'check_update_on_startup', fallback=True)
         self.drawover_options['current_tool'] = config.get('drawover', 'current_color', fallback='select')
@@ -934,7 +932,8 @@ class Capture(QThread):
         self.v_ext = "gif"
         self.ffmpeg_bin = "ffmpeg"
         self.quality = "md" # md or hi
-        self.ffmpeg_flags = {"gifmd": '-quality 50 -loop 0',
+        self.ffmpeg_flags = {"giflw": '-quality 50 -loop 0',
+                             "gifmd": '-vf "split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" -quality 100 -loop 0',
                              "gifhi": '-vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -quality 100 -loop 0',
                              "mp4md": '-vf scale="trunc(iw/2)*2:trunc(ih/2)*2" -crf 32',
                              "mp4hi": '-vf scale="trunc(iw/2)*2:trunc(ih/2)*2" -crf 18',
