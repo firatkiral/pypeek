@@ -63,7 +63,7 @@ class PyPeek(QMainWindow):
             'text_color': 'black',
             'text_size': 13}
 
-        self.version = "2.7.13"
+        self.version = "2.7.14"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -71,6 +71,7 @@ class PyPeek(QMainWindow):
         self.minimum_header_height = 45
         self.minimum_body_height = 100
         self.setStyleSheet("* {font-size: 15px; color: #ddd;}")
+        self.recording = False
 
         # load settings from json file
         self.load_settings()
@@ -471,6 +472,7 @@ class PyPeek(QMainWindow):
         self.record_button.setText(f"{self.capture.v_ext.upper()}")
 
     def prepare_capture_ui(self):
+        self.recording = True
         # incase info widget showing
         if self.body_layout.currentIndex() == 1:
             self.set_mask()
@@ -522,13 +524,14 @@ class PyPeek(QMainWindow):
         self.close_button.show()
         self.show_grips()
         if not self.capture.fullscreen:
-            self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
+            self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.resize(self.record_width, self.record_height)
         else:
             self.setFixedWidth(self.minimum_header_width)
         self.capture.clear_cache_files()
         self.show()
+        self.recording = False
 
     def update_countdown_ui(self, value):
         self.stop_button.setText(f' {value}')
@@ -681,8 +684,9 @@ class PyPeek(QMainWindow):
 
     def mousePressEvent(self, event):
         # self.drag_start_position = event.globalPosition()
-        window = self.window().windowHandle()
-        window.startSystemMove()
+        if not self.recording:
+            window = self.window().windowHandle()
+            window.startSystemMove()
 
     # def mouseMoveEvent(self, event):
     #     if not self.drag_start_position:
@@ -703,9 +707,10 @@ class PyPeek(QMainWindow):
         self.frame.setGeometry(0, 0, event.size().width(), event.size().height())
         self.resize_grips()
 
+
         if not event.spontaneous():
             return
-            
+
         self.record_height = event.size().height()
         self.record_width = event.size().width()
 
