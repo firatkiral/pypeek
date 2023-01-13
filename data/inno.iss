@@ -5,7 +5,7 @@
 #define MyAppVersion "2.7.13"
 #define MyAppPublisher "Creative Tools"
 #define MyAppURL "https://github.com/firatkiral/pypeek"
-#define MyAppExeName "Peek.exe"
+#define MyAppExeName "peek.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -13,7 +13,7 @@
 AppId={{23606E8C-2815-4CE7-8BE6-BED0C59B166D}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
-;AppVerName={#MyAppName} {#MyAppVersion}
+AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
@@ -27,12 +27,15 @@ InfoBeforeFile=art\desc.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 ;PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=..\dist
-OutputBaseFilename="peek-{#MyAppVersion}"
+OutputDir="..\dist\{#MyAppVersion}"
+OutputBaseFilename="peek-setup"
 SetupIconFile=..\src\pypeek\icon\pypeek-setup.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
+UninstallDisplayIcon={app}\Peek.exe
+SignTool=MsSign $f
+;https://stackoverflow.com/questions/19160779/innosetup-code-signing-certificate
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
