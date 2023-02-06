@@ -9,7 +9,7 @@ def get_ffmpeg():
 
 def deploy():
     get_ffmpeg()
-    subprocess.call(['pyinstaller', 'pypeek.spec', '-y'])
+    subprocess.call(['pyinstaller', 'peek.spec', '-y'])
     
 
 if __name__ == '__main__':

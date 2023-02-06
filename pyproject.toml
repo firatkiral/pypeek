@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pypeek"
-version = "2.7.14"
+version = "2.8.6"
 description = "An animated GIF recorder"
 authors = [
   { name="Firat Kiral", email="firatkiral@gmail.com" },
@@ -38,8 +38,8 @@ packages = ["src/pypeek"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-  "/pypeek-onefile.spec",
-  "/pypeek.spec",
+  "/peek-onefile.spec",
+  "/peek.spec",
   "/data",
   "/req.txt",
 ]

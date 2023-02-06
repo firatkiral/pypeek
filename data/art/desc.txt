@@ -1,4 +1,4 @@
-Peek - Screen Recorder & Screenshot 
+Peek - Screen Capture And Recording With Annotations
 
 The ultimate screen capture tool for your desktop. 
 With Peek, you can easily record your screen as a gif, mp4 or take a single image with just a few taps. 
@@ -6,7 +6,7 @@ Enhance your captures with our powerful annotation feature. Whether you're creat
 
 Features:
 - Record your screen as a gif or mp4
-- Take a single image
+- Take a single image of your screen
 - Annotate your captures with text, shapes, and more
 - Record full screen or a custom region
 - Adjustible quality, frame rate, and more

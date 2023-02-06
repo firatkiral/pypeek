@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Peek"
-#define MyAppVersion "2.7.14"
+#define MyAppVersion "2.8.6"
 #define MyAppPublisher "Creative Tools"
 #define MyAppURL "https://github.com/firatkiral/pypeek"
 #define MyAppExeName "peek.exe"
@@ -21,21 +21,22 @@ AppUpdatesURL={#MyAppURL}
 DefaultDirName={autopf}\{#MyAppName}
 ;DisableDirPage=yes
 DisableProgramGroupPage=yes
-;LicenseFile=C:\Users\firat\Repo\pypeek\LICENSE
+;LicenseFile=C:..\LICENSE
 InfoBeforeFile=art\desc.txt
-;InfoAfterFile=C:\Users\firat\Repo\pypeek\req.txt
+;InfoAfterFile=.\req.txt
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
-;PrivilegesRequired=lowest
+PrivilegesRequired=lowest
 ;PrivilegesRequiredOverridesAllowed=dialog
 OutputDir="..\dist\{#MyAppVersion}"
 OutputBaseFilename="peek-setup"
-SetupIconFile=..\src\pypeek\icon\pypeek-setup.ico
+SetupIconFile=..\src\pypeek\icon\peek-setup.ico
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\Peek.exe
 SignTool=MsSign $f
 ;https://stackoverflow.com/questions/19160779/innosetup-code-signing-certificate
+;$cert = New-SelfSignedCertificate -CertStoreLocation Cert:\CurrentUser\My -Type CodeSigningCert -Subject "E=creativetools@gmail.com,CN=Creative Tools"
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"

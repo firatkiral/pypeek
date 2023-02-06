@@ -2,7 +2,17 @@ python -m venv env
 
 & ./env/bin/Activate.ps1
 
-pip install -r req.txt
+pip install -r data/req.txt
+
+
+
+# run:
+
+python src/run.py
+
+
+
+# publish to pypi:
 
 python -m pip install --upgrade build
 
@@ -12,4 +22,8 @@ python -m build
 
 python -m twine upload dist/*
 
-pyinstaller pypeek-onefile.spec -y
+
+
+# build exe:
+
+python src/deplou.py

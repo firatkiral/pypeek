@@ -13,22 +13,21 @@ elif __file__:
 
 class DrawOver(QMainWindow):
     def __init__(self, image_path="", options=None, frame_rate=15, parent=None):
-        super().__init__(parent)
+        super().__init__()
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.setWindowModality(Qt.ApplicationModal)
-        self.setWindowFlags(Qt.WindowType.Window)
+        self._parent = parent
         self.setWindowTitle("Edit")
-        self.setWindowIcon(QIcon(f"{app_path}/icon/pypeek.png"))
+        self.setWindowIcon(QIcon(f"{app_path}/icon/peek.png"))
         self.setStyleSheet("* {background-color: #333; color: #fff;}")
 
         self.image_width = 800
         self.image_height = 600
-        self.accept = False
+        self.reset_parent_onclose = True
 
         self.is_sequence = False
         self.encode_options = None
         self.out_filename = "drawover.png"
-        self.out_path = f'{tempfile.gettempdir()}/pypeek'
+        self.out_path = f'{tempfile.gettempdir()}/peek'
         self.image_path = image_path
         if os.path.isdir(image_path):
             self.out_path = image_path
@@ -60,10 +59,10 @@ class DrawOver(QMainWindow):
         # Variables
         self.current_tool = options["current_tool"] if options else "select"
         self.current_shape = options["current_shape"] if options else "line"
-        self.pen_color = options["pen_color"] if options else "yellow"
-        self.pen_width = options["pen_width"] if options else 2
-        self.shape_color = options["shape_color"] if options else "yellow"
-        self.shape_width = options["shape_width"] if options else 2
+        self.pen_color = options["pen_color"] if options else "red"
+        self.pen_width = options["pen_width"] if options else 3
+        self.shape_color = options["shape_color"] if options else "red"
+        self.shape_width = options["shape_width"] if options else 3
         self.text_color = options["text_color"] if options else "black"
         self.text_size = options["text_size"] if options else 13
         self.dragging = False
@@ -138,14 +137,14 @@ class DrawOver(QMainWindow):
         save_button = DrawOver.create_button("Save", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         save_button.setFixedWidth(100)
         save_button.clicked.connect(self.save)
-        cancel_button = DrawOver.create_button("Cancel")
-        cancel_button.setFixedWidth(100)
-        cancel_button.clicked.connect(self.cancel)
+        close_button = DrawOver.create_button("Close")
+        close_button.setFixedWidth(100)
+        close_button.clicked.connect(self.close)
         save_layout = QHBoxLayout()
         save_layout.setSpacing(10)
         save_layout.setContentsMargins(20,20,20,20)
         save_layout.addStretch(1)
-        save_layout.addWidget(cancel_button)
+        save_layout.addWidget(close_button)
         save_layout.addWidget(save_button)
 
         main_layout = QVBoxLayout()
@@ -163,8 +162,8 @@ class DrawOver(QMainWindow):
 
         self.setCentralWidget(main_widget)
 
-        window_width = self.image_width + 40
-        window_height = self.image_height+220 if self.is_sequence else self.image_height+130
+        window_width = self.image_width + 35
+        window_height = self.image_height + 220 if self.is_sequence else self.image_height + 160
         screen_size = QGuiApplication.primaryScreen().size()
         pref_width = screen_size.width() * 0.8
         pref_height = screen_size.height() * 0.8
@@ -363,9 +362,6 @@ class DrawOver(QMainWindow):
         self.bg_pixmap = QPixmap(os.path.join(self.out_path, image_filename))
         self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.AspectRatioMode.KeepAspectRatio))
 
-    def cancel(self):
-        self.close()
-
     def save(self):
         if len(self.items) > 0:
             range = (self.slider.minimum(), self.slider.maximum() + 1) if self.slider else None
@@ -375,23 +371,20 @@ class DrawOver(QMainWindow):
             pixmap = QPixmap(self.canvas_width, self.canvas_height)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
-            # canvas position in self.view
-            canvas_pos = self.view.mapFromScene(self.canvas_widget.pos())
             self.scene.render(painter, QRectF(), QRectF(0, 0, self.canvas_width, self.canvas_height))
             painter.end()
             self.canvas_widget.show()
-            pixmap.save(drawover_image_path, "png")
+            pixmap.save(drawover_image_path, "png", 100)
         elif self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
             range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
-        self.accept = True
-        self.close()
-        
         if self.slider:
-            self.parent().recording_drawover_done(self)
+            self.reset_parent_onclose = False
+            self.close()
+            self._parent.recording_drawover_done(self)
         else:
-            self.parent().snapshot_drawover_done(self)
+            self._parent.snapshot_drawover_done(self) and self.close()
 
     def create_canvas(self):
         canvas = QLabel()
@@ -874,8 +867,46 @@ class DrawOver(QMainWindow):
             arrow2 = self.current_double_arrow_line_item.childItems()[2]
             arrow2.setRotation(atan2(dir.y(), dir.x()) * 180 / pi + 180)
         if self.current_tool == "rectangle" and self.current_rectangle_item is not None:
-            self.current_rectangle_item.setRect(self.start_point.x(), self.start_point.y(), self.end_point.x() - self.start_point.x(), self.end_point.y() - self.start_point.y())
+            start_point = QPointF(self.start_point)
+            end_point = QPointF(self.end_point)
+            width = abs(end_point.x() - start_point.x())
+            height = abs(end_point.y() - start_point.y())
+            if self.end_point.x() < self.start_point.x() and self.end_point.y() > self.start_point.y():
+                start_point.setX(self.end_point.x())
+                start_point.setY(self.end_point.y() - height)
+                end_point.setX(self.start_point.x())
+                end_point.setY(self.start_point.y() + height)
+            elif self.end_point.x() > self.start_point.x() and self.end_point.y() < self.start_point.y():
+                start_point.setX(self.end_point.x() - width)
+                start_point.setY(self.end_point.y())
+                end_point.setX(self.start_point.x() + width)
+                end_point.setY(self.start_point.y())
+            elif self.end_point.x() < self.start_point.x() and self.end_point.y() < self.start_point.y():
+                start_point.setX(self.end_point.x())
+                start_point.setY(self.end_point.y())
+                end_point.setX(self.start_point.x())
+                end_point.setY(self.start_point.y())
+            self.current_rectangle_item.setRect(start_point.x(), start_point.y(), end_point.x() - start_point.x(), end_point.y() - start_point.y())
         if self.current_tool == "ellipse" and self.current_ellipse_item is not None:
+            start_point = QPointF(self.start_point)
+            end_point = QPointF(self.end_point)
+            width = abs(end_point.x() - start_point.x())
+            height = abs(end_point.y() - start_point.y())
+            if self.end_point.x() < self.start_point.x() and self.end_point.y() > self.start_point.y():
+                start_point.setX(self.end_point.x())
+                start_point.setY(self.end_point.y() - height)
+                end_point.setX(self.start_point.x())
+                end_point.setY(self.start_point.y() + height)
+            elif self.end_point.x() > self.start_point.x() and self.end_point.y() < self.start_point.y():
+                start_point.setX(self.end_point.x() - width)
+                start_point.setY(self.end_point.y())
+                end_point.setX(self.start_point.x() + width)
+                end_point.setY(self.start_point.y())
+            elif self.end_point.x() < self.start_point.x() and self.end_point.y() < self.start_point.y():
+                start_point.setX(self.end_point.x())
+                start_point.setY(self.end_point.y())
+                end_point.setX(self.start_point.x())
+                end_point.setY(self.start_point.y())
             self.current_ellipse_item.setRect(self.start_point.x(), self.start_point.y(), self.end_point.x() - self.start_point.x(), self.end_point.y() - self.start_point.y())
     
     def _mouseReleaseEvent(self, e):
@@ -907,9 +938,9 @@ class DrawOver(QMainWindow):
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
 
     def closeEvent(self, event):
-        if not self.accept:
-            self.parent().update_drawover_settings(self)
-            self.parent().end_capture_ui()
+        self._parent.update_drawover_settings(self)
+        if self.reset_parent_onclose:
+            self._parent.end_capture_ui()
         
     @staticmethod
     def create_button(text="", icon=None, bgcolor= "#3e3e3e", hovercolor = "#494949", pressedcolor="#434343", callback=None):

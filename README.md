@@ -2,14 +2,14 @@
 
 <br/>
 
-# PyPeek - Screen Capture & Recording With Annotations
+# Peek - Screen Capture & Recording With Annotations
 
 ### Cross platform screen recorder with an easy to use interface and annotation features.
 
 <br/>
 <br/>
 
-![PyPeek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/art/pypeek-recording-itself.gif)
+![Peek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/art/peek-recording-itself.gif)
 
 <br/>
 <br/>
@@ -70,17 +70,17 @@ $ pip uninstall pypeek
 <br/>
 
 ## License
-PyPeek Copyright © 2023
+Peek Copyright © 2023
 
-PyPeek is free software: you can redistribute it and/or modify
+Peek is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
 
-PyPeek is distributed in the hope that it will be useful,
+Peek is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with PyPeek. If not, see <https://www.gnu.org/licenses/>.
+along with Peek. If not, see <https://www.gnu.org/licenses/>.

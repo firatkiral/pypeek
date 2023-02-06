@@ -38,7 +38,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     uac_admin=False,
-    icon=['src/pypeek/icon/pypeek.ico'],
+    icon=['src/pypeek/icon/peek.ico'],
 )
 coll = COLLECT(
     exe,
@@ -53,6 +53,6 @@ coll = COLLECT(
 app = BUNDLE(
     coll,
     name='Peek.app',
-    icon='src/pypeek/icon/pypeek.icns',
+    icon='src/pypeek/icon/peek.icns',
     bundle_identifier=None,
 )
