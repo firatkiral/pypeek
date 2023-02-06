@@ -52,7 +52,7 @@ class PyPeek(QMainWindow):
         self.needs_restart = False
         self.last_save_path =  os.path.expanduser("~")
 
-        self.version = "2.8.6"
+        self.version = "2.8.7"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
