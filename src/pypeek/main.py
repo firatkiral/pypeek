@@ -43,8 +43,8 @@ class PyPeek(QMainWindow):
         self.capture.fps = 15
         self.capture.quality = "md" # md, hi
         self.capture.delay = 3
-        self.record_width = 600
-        self.record_height = 400
+        self.record_width = 506
+        self.record_height = 406
         self.pos_x = 0
         self.pos_y = 0
         self.minimize_to_tray = False
@@ -52,14 +52,14 @@ class PyPeek(QMainWindow):
         self.needs_restart = False
         self.last_save_path =  os.path.expanduser("~")
 
-        self.version = "2.8.7"
+        self.version = "2.8.9"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
         self.minimum_header_width = 355
         self.minimum_header_height = 45
         self.minimum_body_height = 100
-        self.setStyleSheet("* {font-size: 15px; color: #ddd;}")
+        self.setStyleSheet("* {font-size: 15px; color: #ddd;} QToolTip { color: #333;}")
         self.block_window_move = False
         self.block_resize_event = False
 
@@ -111,28 +111,34 @@ class PyPeek(QMainWindow):
 
     def create_header_widget(self):
         self.snapshot_button = PyPeek.create_button("", f"{app_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
+        self.snapshot_button.setToolTip("Take a snapshot")
         self.snapshot_button.clicked.connect(self.snapshot)
 
         self.record_button = PyPeek.create_button(f"{self.capture.v_ext.upper()}", f"{app_path}/icon/record-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.record_button.setFixedWidth(84)
+        self.record_button.setToolTip("Start recording")
         self.record_button.clicked.connect(self.record)
 
         self.stop_button = PyPeek.create_button("0:00", f"{app_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
+        self.stop_button.setToolTip("Stop recording")
         self.stop_button.clicked.connect(self.stop_capture)
         self.stop_button.setFixedWidth(114)
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
         self.stop_button.hide()
 
         self.stop_encoding_button = PyPeek.create_button("", f"{app_path}/icon/x.png", "#0d6efd", "#0b5ed7", "#0a58ca")
+        self.stop_encoding_button.setToolTip("Stop encoding")
         self.stop_encoding_button.setIconSize(QSize(16, 16))
         self.stop_encoding_button.clicked.connect(self.stop_encoding)
         self.stop_encoding_button.hide()
 
         self.fullscreen_button = PyPeek.create_button("", f"{app_path}/icon/display.png")
+        self.fullscreen_button.setToolTip("Record fullscreen" if not self.capture.fullscreen else "Record window")
         self.fullscreen_button.clicked.connect(lambda: self.set_fullscreen(not self.capture.fullscreen))
 
         self.format_button = PyPeek.create_button("", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         self.format_button.setStyleSheet( self.format_button.styleSheet() + " QPushButton::menu-indicator {subcontrol-position: center;}" )
+        self.format_button.setToolTip("Select output format")
         self.format_button.setFixedWidth(30)
         self.menu = QMenu(self.format_button)
         self.menu.setContentsMargins(10, 0, 10, 0)
@@ -180,6 +186,7 @@ class PyPeek(QMainWindow):
         self.record_button_grp = PyPeek.make_group_button(self.record_button, self.format_button, self.stop_encoding_button)
 
         self.settings_button = PyPeek.create_button("", f"{app_path}/icon/gear.png")
+        self.settings_button.setToolTip("Settings")
         # self.settings_button.setFixedSize(30, 30)
         self.settings_button.clicked.connect(lambda :self.settings_widget.show())
 
@@ -354,10 +361,10 @@ class PyPeek(QMainWindow):
         self.capture.quality = config.get('capture', 'quality', fallback='md')
         self.capture.delay = config.getint('capture', 'delay', fallback=3)
         self.capture.duration = config.getint('capture', 'duration', fallback=0)
-        self.record_width = config.getint('capture', 'width', fallback=600)
-        self.record_height = config.getint('capture', 'height', fallback=400)
+        self.record_width = config.getint('capture', 'width', fallback=506)
+        self.record_height = config.getint('capture', 'height', fallback=406)
         self.pos_x = config.getint('capture', 'pos_x', fallback=int((QGuiApplication.primaryScreen().size().width() - self.minimum_header_width) / 2))
-        self.pos_y = config.getint('capture', 'pos_y', fallback=int(QGuiApplication.primaryScreen().size().height() * .8))
+        self.pos_y = config.getint('capture', 'pos_y', fallback=int(QGuiApplication.primaryScreen().size().height() * .5))
         self.last_save_path = config.get('capture', 'last_save_path', fallback=self.last_save_path)
         self.check_update_on_startup = config.getboolean('capture', 'check_update_on_startup', fallback=True)
         self.drawover_options['current_tool'] = config.get('drawover', 'current_color', fallback='select')
@@ -639,11 +646,13 @@ class PyPeek(QMainWindow):
         if value:
             self.hide_grips()
             self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/bounding-box-circles.png"))
+            self.fullscreen_button.setToolTip("Record window")
             self.setFixedSize(self.minimum_header_width, self.minimum_header_height) # prevent manual resizing height
             self.clearMask()
         else:
             self.show_grips()
             self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/display.png"))
+            self.fullscreen_button.setToolTip("Record fullscreen")
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
