@@ -52,7 +52,7 @@ class PyPeek(QMainWindow):
         self.needs_restart = False
         self.last_save_path =  os.path.expanduser("~")
 
-        self.version = "2.8.9"
+        self.version = "2.9.0"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -120,7 +120,7 @@ class PyPeek(QMainWindow):
         self.record_button.clicked.connect(self.record)
 
         self.stop_button = PyPeek.create_button("0:00", f"{app_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
-        self.stop_button.setToolTip("Stop recording")
+        self.stop_button.setToolTip("Stop")
         self.stop_button.clicked.connect(self.stop_capture)
         self.stop_button.setFixedWidth(114)
         # self.stop_button.setStyleSheet(self.stop_button.styleSheet() + "QPushButton { text-align:left; }")
@@ -138,7 +138,6 @@ class PyPeek(QMainWindow):
 
         self.format_button = PyPeek.create_button("", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         self.format_button.setStyleSheet( self.format_button.styleSheet() + " QPushButton::menu-indicator {subcontrol-position: center;}" )
-        self.format_button.setToolTip("Select output format")
         self.format_button.setFixedWidth(30)
         self.menu = QMenu(self.format_button)
         self.menu.setContentsMargins(10, 0, 10, 0)
@@ -482,6 +481,7 @@ class PyPeek(QMainWindow):
         self.record_button_grp.hide()
         self.record_button.setDisabled(True)
         self.record_button.setIcon(QIcon(f"{app_path}/icon/in-progress.png"))
+        self.record_button.setToolTip("")
         self.record_button.setText("%0")
         self.format_button.hide()
         self.stop_encoding_button.show()
@@ -511,6 +511,7 @@ class PyPeek(QMainWindow):
         self.record_button.setDisabled(False)
         self.record_button.setText(self.capture.v_ext.upper())
         self.record_button.setIcon(QIcon(f"{app_path}/icon/record-fill.png"))
+        self.record_button.setToolTip("Start recording")
         self.stop_button.setText("0:00")
         self.format_button.setDisabled(False)
         self.format_button.show()
