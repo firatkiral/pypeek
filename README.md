@@ -35,10 +35,9 @@ Inspired by [Peek](https://github.com/phw/peek).
 <br/>
 
 
-## Install Python Module:
+## Install in Python:
 
 <br/>
-
 
 ### Requirements:
 
