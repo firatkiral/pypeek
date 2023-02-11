@@ -4,6 +4,14 @@ Cross platform screen recorder with an easy to use interface and annotation feat
 
 Inspired by [Peek](https://github.com/phw/peek).
 
+A developer, designer, or a student, you may need to record or capture your screen to create tutorials, report bugs, provide technical support or simply reflect on your own work and progress. And if you have different operating systems on your different machines, it would be great if you could use the same tool on all of them. That's why I created Peek.
+
+Peek is a simple screen recorder that allows you to record your screen as gif or mp4, capture a screenshot as jpg, and annotate your recordings with drawing, text, arrows, and highlights.
+
+Annotation tool is very useful when you want to highlight a specific area or draw attention to a specific part of your recording. You can add text, arrows or shapes to your recording. Range slider allows you to trim your recording to a desired length. You can create a complete recording with annotation without leaving the app.
+
+![Peek is excited](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/peek-too-excited.gif)
+
 <br/>
 
 ![Peek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/peek-recording-itself.gif)
