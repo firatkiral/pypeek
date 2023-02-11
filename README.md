@@ -1,10 +1,8 @@
-### Cross platform Python port of [Peek](https://github.com/phw/peek)
+# Peek - Screen Recorder and Screenshot with Annotation
 
-<br/>
+Cross platform screen recorder with an easy to use interface and annotation features written in Python and PySide6.
 
-# Peek - Screen Capture & Recording With Annotations
-
-### Cross platform screen recorder with an easy to use interface and annotation features.
+Inspired by [Peek](https://github.com/phw/peek).
 
 <br/>
 <br/>
@@ -14,13 +12,39 @@
 <br/>
 <br/>
 
+## Features
+
+- Record your screen as gif or mp4
+- Capture a screenshot as jpg
+- Record a selected area or the whole screen
+- Annotation features like drawing, text, arrows, and highlights
+- Delay recording start with a countdown
+- Limit recording to a fixed time
+
+
+<br/>
+<br/>
+
+## Download The App:
+
+[Apple Store](https://apps.apple.com/us/app/peek-screen-recorder/id1670786300)
+
+[Microsoft Store](https://apps.microsoft.com/store/detail/XP8CD3D3Q50MS2)
+
+<br/>
+<br/>
+
+
+## Install Python Module:
+
+<br/>
+
+
 ### Requirements:
 
 - Python 3.10 or later
 
 - Windows, macOS, Linux on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
-
-<br/>
 
 ### Install:
 
