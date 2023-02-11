@@ -5,11 +5,9 @@ Cross platform screen recorder with an easy to use interface and annotation feat
 Inspired by [Peek](https://github.com/phw/peek).
 
 <br/>
-<br/>
 
 ![Peek recording itself](https://raw.githubusercontent.com/firatkiral/pypeek/main/data/peek-recording-itself.gif)
 
-<br/>
 <br/>
 
 ## Features
@@ -23,7 +21,6 @@ Inspired by [Peek](https://github.com/phw/peek).
 
 
 <br/>
-<br/>
 
 ## Download The App:
 
@@ -32,12 +29,9 @@ Inspired by [Peek](https://github.com/phw/peek).
 [Microsoft Store](https://apps.microsoft.com/store/detail/XP8CD3D3Q50MS2)
 
 <br/>
-<br/>
 
 
 ## Install in Python:
-
-<br/>
 
 ### Requirements:
 
@@ -89,7 +83,6 @@ $ pip install --upgrade pypeek
 $ pip uninstall pypeek
 ```
 
-<br/>
 <br/>
 
 ## License
