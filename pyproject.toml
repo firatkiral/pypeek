@@ -41,8 +41,6 @@ packages = ["src/pypeek"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [
-  "/peek-onefile.spec",
-  "/peek.spec",
   "/data",
   "/req.txt",
 ]
