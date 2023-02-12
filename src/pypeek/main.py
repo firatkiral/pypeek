@@ -1,14 +1,13 @@
-import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, distutils.spawn, logging
+import os, shutil, time, subprocess, configparser, sys, requests, math, distutils.spawn, logging
 from .shortcut import create_shortcut
 from .drawover import DrawOver
 from .ffmpeg import get_ffmpeg
-from .__init__ import __version__
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-
+__version__ = '2.9.1'
 
 def init():
     global user_path, app_path, logger

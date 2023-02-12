@@ -34,7 +34,7 @@ dependencies = [
 ]
 
 [tool.hatch.version]
-path = "src/pypeek/__init__.py"
+path = "src/pypeek/main.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pypeek"]
