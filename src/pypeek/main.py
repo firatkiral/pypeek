@@ -1,10 +1,22 @@
-import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, platform, distutils.spawn, logging
+import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, platform, distutils.spawn, logging, stat
 from .shortcut import create_shortcut
 from .drawover import DrawOver
 from .ffmpeg import get_ffmpeg
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
+
+user_path = os.path.join(os.path.expanduser("~"), "Peek")
+if not os.path.exists(user_path):
+    os.mkdir(user_path)
+
+logger = logging.getLogger()
+
+logging.basicConfig(
+    filename=os.path.join(user_path, "peek.log"),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = sys._MEIPASS
@@ -22,18 +34,6 @@ elif __file__:
     os.environ["PATH"] = os.pathsep.join([ffmpeg_local, os.environ["PATH"]])
     app_path = os.path.abspath(os.path.dirname(__file__))
 
-
-user_path = os.path.join(os.path.expanduser("~"), "Peek")
-if not os.path.exists(user_path):
-    os.mkdir(user_path)
-
-logger = logging.getLogger()
-
-logging.basicConfig(
-    filename=os.path.join(user_path, "peek.log"),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
 
 class PyPeek(QMainWindow):
     def __init__(self):
