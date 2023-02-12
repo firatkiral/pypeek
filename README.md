@@ -62,7 +62,7 @@ $ pypeek
 ### Create a desktop shortcut:
 
 ```console
-$ pypeek shortcut
+$ pypeek --shortcut
 ```
 
 ### Import as a module:

@@ -1,39 +1,46 @@
-import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, platform, distutils.spawn, logging, stat
+import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, distutils.spawn, logging
 from .shortcut import create_shortcut
 from .drawover import DrawOver
 from .ffmpeg import get_ffmpeg
+from .__init__ import __version__
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
-user_path = os.path.join(os.path.expanduser("~"), "Peek")
-if not os.path.exists(user_path):
-    os.mkdir(user_path)
+user_path, app_path, logger = None, None, None
 
-logger = logging.getLogger()
 
-logging.basicConfig(
-    filename=os.path.join(user_path, "peek.log"),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-)
+def init():
+    global user_path, app_path, logger
+    if user_path is not None:
+        return
+    user_path = os.path.join(os.path.expanduser("~"), "Peek")
+    if not os.path.exists(user_path):
+        os.mkdir(user_path)
 
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    app_path = sys._MEIPASS
-    os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
-elif __file__:
-    ffmpeg_local = os.path.abspath(os.path.dirname(__file__))+"/bin/" + platform.system().lower()
-    if(not distutils.spawn.find_executable("ffmpeg") and not distutils.spawn.find_executable("ffmpeg", ffmpeg_local)): 
-        if input("Ffmpeg not found, download? (y/n): ").lower() == "y":
-            get_ffmpeg()
-        else:
-            print("Please install ffmpeg and add it to your PATH. Exiting...")
-            sys.exit()
+    logger = logging.getLogger()
 
-    # add local ffmpeg to path in case its local
-    os.environ["PATH"] = os.pathsep.join([ffmpeg_local, os.environ["PATH"]])
-    app_path = os.path.abspath(os.path.dirname(__file__))
+    logging.basicConfig(
+        filename=os.path.join(user_path, "peek.log"),
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        level=logging.INFO,
+    )
 
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        app_path = sys._MEIPASS
+        os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
+    elif __file__:
+        ffmpeg_local = os.path.abspath(os.path.dirname(__file__))+"/bin"
+        if(not distutils.spawn.find_executable("ffmpeg") and not distutils.spawn.find_executable("ffmpeg", ffmpeg_local)): 
+            if input("Ffmpeg not found, download? (y/n): ").lower() == "y":
+                get_ffmpeg()
+            else:
+                print("Please install ffmpeg and add it to your PATH. Exiting...")
+                sys.exit()
+
+        # add local ffmpeg to path in case its local
+        os.environ["PATH"] = os.pathsep.join([ffmpeg_local, os.environ["PATH"]])
+        app_path = os.path.abspath(os.path.dirname(__file__))
 
 class PyPeek(QMainWindow):
     def __init__(self):
@@ -67,7 +74,6 @@ class PyPeek(QMainWindow):
         self.needs_restart = False
         self.last_save_path =  os.path.expanduser("~")
 
-        self.version = "2.9.1"
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.set_mask)
         self.drag_start_position = None
@@ -272,7 +278,7 @@ class PyPeek(QMainWindow):
         self.duration_widget = PyPeek.create_row_widget("Recording Limit", "Stop recording after a given time in seconds (0 = unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
         self.update_widget = PyPeek.create_row_widget("Check For Updates", "Check for updates on startup", PyPeek.create_checkbox("", self.check_update_on_startup, self.set_check_update_on_startup))
         self.reset_widget = PyPeek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", PyPeek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = PyPeek.create_row_widget("About", f"Peek {self.version}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek/wiki"))
+        self.copyright_widget = PyPeek.create_row_widget("About", f"Peek {__version__}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek/wiki"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -463,7 +469,7 @@ class PyPeek(QMainWindow):
             self.update_mod.start()
     
     def do_update(self, latest_version):
-        if latest_version != self.version:
+        if latest_version != __version__:
             result, not_update = PyPeek.confirm_dialog("Update Available!", 
             f"\nNew version {latest_version} is available.\n\nDo you want to download it now?", 
             "Don't check for updates on startup")
@@ -705,7 +711,7 @@ class PyPeek(QMainWindow):
 
     def mousePressEvent(self, event):
         if not self.block_window_move:
-            if platform.system() == "Linux":
+            if sys.platform == "linux":
                 window = self.window().windowHandle()
                 window.startSystemMove()
             else:
@@ -1178,6 +1184,7 @@ class TryLock(QThread):
 app = QApplication(sys.argv)
 
 def _show():
+    init()
     window = PyPeek()
     app.exec()
     if window.needs_restart:
@@ -1185,8 +1192,18 @@ def _show():
 
 def show():
     if len(sys.argv) > 1:
-        if sys.argv[1] == "shortcut":
+        if sys.argv[1] == "-h" or sys.argv[1] == "--help":
+            print("Usage: pypeek [OPTION]")
+            print("no option\t\Start pypeek")
+            print("-h, --help\t\tShow this help message")
+            print("-v, --version\t\tShow version")
+            print("-s, --shortcut\t\tCreate shortcut")
+            return
+        if sys.argv[1] == "-v" or sys.argv[1] == "--version":
+            print("pypeek v" + __version__)
+            return
+        if sys.argv[1] == "-s" or sys.argv[1] == "--shortcut":
             create_shortcut()
             return
-            
+    
     _show()

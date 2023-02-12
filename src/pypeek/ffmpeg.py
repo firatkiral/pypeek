@@ -6,9 +6,9 @@ elif __file__:
     SELF_DIR = os.path.abspath(os.path.dirname(__file__))
 
 PLATFORM_ZIP_FILES = {
-    "win32": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg_bins/win32.zip",
-    "darwin": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg_bins/darwin.zip",
-    "linux": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg_bins/linux.zip",
+    "win32": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg/win32.zip",
+    "darwin": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg/darwin.zip",
+    "linux": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg/linux.zip",
 }
 
 def check_system():
@@ -25,7 +25,7 @@ def get_platform_http_zip():
 def get_platform_dir():
     """Either get the executable or raise an error"""
     check_system()
-    return os.path.join(SELF_DIR, "bin", sys.platform)
+    return os.path.join(SELF_DIR, "bin")
 
 
 def download_file(url, local_path):
@@ -54,7 +54,7 @@ def get_or_fetch_platform_executables_else_raise(fix_permissions=True):
         # All zip files store their platform executables in a folder
         # like "win32" or "darwin" or "linux" inside the executable. So root
         # the install one level up from that same directory.
-        install_dir = os.path.dirname(exe_dir)
+        install_dir = exe_dir
         os.makedirs(exe_dir, exist_ok=True)
         url = get_platform_http_zip()
         local_zip = exe_dir + ".zip"

@@ -41,9 +41,10 @@ def mac():
     shutil.copy(f"{dir_path}/icon/peek.icns", f"{desktop_path}/peek.app/Contents/Resources/applet.icns")
 
 def create_shortcut():
-    if platform.system() == 'Windows':
+    if sys.platform == 'win32':
         win()
-    elif platform.system() == 'Darwin':
+    elif sys.platform == 'darwin':
         mac()
     else:
+        print(f"{sys.platform} is not supported yet.")
         pass
