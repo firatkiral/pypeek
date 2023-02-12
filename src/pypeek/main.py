@@ -1077,7 +1077,8 @@ class Capture(QThread):
                       "-progress", "pipe:1"]
 
         try:
-            process = subprocess.Popen(systemcall, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
+            # Shell = True, otherwise the terminal window pops up on Windows app
+            process = subprocess.Popen(systemcall, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
             while True:
                 realtime_output = process.stdout.readline()
                 if realtime_output == '' and process.poll() is not None:
