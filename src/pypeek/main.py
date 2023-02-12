@@ -6,8 +6,6 @@ from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 
-# TODO: Show warning if record duration is set
-
 if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = sys._MEIPASS
     os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
@@ -119,7 +117,7 @@ class PyPeek(QMainWindow):
         self.record_button.setToolTip("Start recording")
         self.record_button.clicked.connect(self.record)
 
-        self.stop_button = PyPeek.create_button("0:00", f"{app_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
+        self.stop_button = PyPeek.create_button("", f"{app_path}/icon/stop-fill.png", "#dc3545", "#dd3d4c", "#db2f3f" )
         self.stop_button.setToolTip("Stop")
         self.stop_button.clicked.connect(self.stop_capture)
         self.stop_button.setFixedWidth(114)
@@ -512,7 +510,7 @@ class PyPeek(QMainWindow):
         self.record_button.setText(self.capture.v_ext.upper())
         self.record_button.setIcon(QIcon(f"{app_path}/icon/record-fill.png"))
         self.record_button.setToolTip("Start recording")
-        self.stop_button.setText("0:00")
+        self.stop_button.setText("")
         self.format_button.setDisabled(False)
         self.format_button.show()
         self.stop_encoding_button.hide()
@@ -539,7 +537,7 @@ class PyPeek(QMainWindow):
     def update_countdown_ui(self, value):
         self.stop_button.setText(f' {value}')
         if value == 0:
-            self.stop_button.setText("0:00")
+            self.stop_button.setText("")
     
     def update_timer_ui(self, value):
         minutes = value // 60
@@ -944,6 +942,7 @@ class Capture(QThread):
                 self.capture_stopped_signal.emit()
                 self.quit()
                 return
+            self.run_timer_signal.emit(self.duration)
             self.fullscreen and self.minimize_to_tray_signal.emit()
             time.sleep(.2) # give the app time to move to the tray
             self.clear_cache_files()
@@ -962,7 +961,7 @@ class Capture(QThread):
                 total_time = int(time.time()-self.start_capture_time)
                 if total_time > seconds:
                     seconds = total_time
-                    self.run_timer_signal.emit(seconds)
+                    self.run_timer_signal.emit(seconds if self.duration == 0 else self.duration-seconds)
                 if self.duration != 0 and total_time >= self.duration:
                     self.halt = True
 
