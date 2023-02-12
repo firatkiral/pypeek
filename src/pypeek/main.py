@@ -1194,7 +1194,7 @@ def show():
     if len(sys.argv) > 1:
         if sys.argv[1] == "-h" or sys.argv[1] == "--help":
             print("Usage: pypeek [OPTION]")
-            print("no option\t\Start pypeek")
+            print("no option\t\tStart pypeek")
             print("-h, --help\t\tShow this help message")
             print("-v, --version\t\tShow version")
             print("-s, --shortcut\t\tCreate shortcut")
