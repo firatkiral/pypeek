@@ -1,4 +1,4 @@
-import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, platform
+import os, shutil, time, subprocess, tempfile, configparser, sys, requests, math, platform, distutils.spawn
 from .shortcut import create_shortcut
 from .drawover import DrawOver
 from .ffmpeg import get_ffmpeg
@@ -10,7 +10,14 @@ if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
     app_path = sys._MEIPASS
     os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
 elif __file__:
-    get_ffmpeg()
+    ffmpeg_local = os.path.abspath(os.path.dirname(__file__))+"/bin/" + platform.system().lower()
+    if(not distutils.spawn.find_executable("ffmpeg") and not distutils.spawn.find_executable("ffmpeg", ffmpeg_local)): 
+        if input("Ffmpeg not found, download? (y/n): ").lower() == "y":
+            get_ffmpeg()
+        else:
+            print("Please install ffmpeg and add it to your PATH. Exiting...")
+            sys.exit()
+
     app_path = os.path.abspath(os.path.dirname(__file__))
 
 

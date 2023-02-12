@@ -6,9 +6,9 @@ elif __file__:
     SELF_DIR = os.path.abspath(os.path.dirname(__file__))
 
 PLATFORM_ZIP_FILES = {
-    "win32": "https://github.com/zackees/ffmpeg_bins/raw/main/v5.0/win32.zip",
-    "darwin": "https://github.com/zackees/ffmpeg_bins/raw/main/v5.0/darwin.zip",
-    "linux": "https://github.com/zackees/ffmpeg_bins/raw/main/v5.0/linux.zip",
+    "win32": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg_bins/win32.zip",
+    "darwin": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg_bins/darwin.zip",
+    "linux": "https://raw.githubusercontent.com/firatkiral/pypeek/main/data/ffmpeg_bins/linux.zip",
 }
 
 def check_system():
