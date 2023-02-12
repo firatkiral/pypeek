@@ -922,13 +922,13 @@ class Capture(QThread):
         self.v_ext = "gif"
         self.ffmpeg_bin = "ffmpeg"
         self.quality = "md" # md or hi
-        self.ffmpeg_flags = {"giflw": '-quality 50 -loop 0',
-                             "gifmd": '-vf "split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle" -quality 100 -loop 0',
-                             "gifhi": '-vf "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse" -quality 100 -loop 0',
-                             "mp4md": '-vf scale="trunc(iw/2)*2:trunc(ih/2)*2" -crf 32',
-                             "mp4hi": '-vf scale="trunc(iw/2)*2:trunc(ih/2)*2" -crf 18',
-                             "webmmd": '-crf 32 -b:v 0',
-                             "webmhi": '-crf 18 -b:v 0'}
+        self.ffmpeg_flags = {"giflw": ["-quality" "50", "-loop","0"],
+                             "gifmd": ["-vf", "split[s0][s1];[s0]palettegen=stats_mode=diff[p];[s1][p]paletteuse=dither=bayer:bayer_scale=5:diff_mode=rectangle", "-quality", "100", "-loop", "0"],
+                             "gifhi": ["-vf", "split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse", "-quality", "100", "-loop", "0"],
+                             "mp4md": ["-vf", 'scale=trunc(iw/2)*2:trunc(ih/2)*2', "-crf", "32"],
+                             "mp4hi": ["-vf", 'scale=trunc(iw/2)*2:trunc(ih/2)*2', "-crf", "18"],
+                             "webmmd": ["-crf", "32", "-b:v", "0"],
+                             "webmhi": ["-crf", "18", "-b:v", "0"]}
         self.fmt = "06d"
         self.fps = 15
         self.true_fps = 15 # Takes dropped / missed frames into account, otherwise it will play faster on drawover
@@ -1046,16 +1046,17 @@ class Capture(QThread):
             vframes = self.encode_options["drawover_range"][1] - self.encode_options["drawover_range"][0]
         fprefix = (f'{self.current_cache_folder}/peek_{self.UID}_')
         vidfile = f"{self.current_cache_folder}/peek_{self.UID}.{self.v_ext}"
-        systemcall = str(self.ffmpeg_bin)+" -r " + str(self.true_fps) + " -y"
-        systemcall += " -start_number " + str(start_number)
-        systemcall += " -i " + str(fprefix)+"%"+str(self.fmt)+".jpg"
-        systemcall += " -vframes " + str(vframes)
-        systemcall += " "+self.ffmpeg_flags[self.v_ext + self.quality]
-        systemcall += " "+str(vidfile)
-        systemcall += " -progress pipe:1"
+
+        systemcall = [str(self.ffmpeg_bin), "-r", str(self.true_fps), "-y",
+                      "-start_number", str(start_number),
+                      "-i", str(fprefix)+"%"+str(self.fmt)+".jpg",
+                      "-vframes", str(vframes),
+                      *self.ffmpeg_flags[self.v_ext + self.quality],
+                      str(vidfile),
+                      "-progress", "pipe:1"]
 
         try:
-            process = subprocess.Popen(systemcall, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
+            process = subprocess.Popen(systemcall, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
             while True:
                 realtime_output = process.stdout.readline()
                 if realtime_output == '' and process.poll() is not None:
