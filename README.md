@@ -45,6 +45,8 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 
 - Python 3.10 or later
 
+- Ffmpeg [Optional], it will be downloaded if not found in system path.
+
 - Windows, macOS, Linux on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
 
 ### Install:
