@@ -591,9 +591,12 @@ class PyPeek(QMainWindow):
         new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), "Images (*.jpg)")
         
         if new_filepath[0]:
-            shutil.move(filepath, new_filepath[0])
-            self.last_save_path = os.path.dirname(new_filepath[0])
-            return True
+            try:
+                shutil.move(filepath, new_filepath[0])
+                self.last_save_path = os.path.dirname(new_filepath[0])
+                return True
+            except Exception as e:
+                logger.error(e)
             
         return False
 
@@ -620,8 +623,11 @@ class PyPeek(QMainWindow):
             new_filepath = QFileDialog.getSaveFileName(self, "Save Video", os.path.join(self.last_save_path, filename), f"Videos (*.{self.capture.v_ext})")
             
             if new_filepath[0]:
-                shutil.move(filepath, new_filepath[0])
-                self.last_save_path = os.path.dirname(new_filepath[0])
+                try:
+                    shutil.move(filepath, new_filepath[0])
+                    self.last_save_path = os.path.dirname(new_filepath[0])
+                except Exception as e:
+                    logger.error(e)
         
         self.end_capture_ui()
 
@@ -1122,12 +1128,15 @@ class Capture(QThread):
         if os.path.exists(self.current_cache_folder):
             try:
                 shutil.rmtree(self.current_cache_folder)
-            except:
-                pass
+            except Exception as e:
+                logger.error(e)
     
     def clear_cache_dir(self):
         if os.path.exists(self.cache_dir):
-            shutil.rmtree(self.cache_dir)
+            try:
+                shutil.rmtree(self.cache_dir)
+            except Exception as e:
+                logger.error(e)
 
     def _snapshot(self, capture_count=None):
         screenshot = QScreen.grabWindow(QApplication.instance().primaryScreen())
@@ -1163,8 +1172,8 @@ class CheckUpdate(QThread):
             if response.status_code == 200:
                 data = response.json()
                 self.update_check_done_signal.emit(data["info"]["version"])
-        except:
-            pass
+        except Exception as e:
+            logger.error(e)
             
         self.quit()
 
