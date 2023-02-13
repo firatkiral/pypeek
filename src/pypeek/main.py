@@ -1092,6 +1092,7 @@ class Capture(QThread):
                 if realtime_output == '' and process.poll() is not None:
                     if process.returncode != 0:
                         vidfile = None
+                        logger.error(f"ffmpeg returned {process.returncode}")
                     break
                 if realtime_output:
                     if "frame=" in realtime_output:
