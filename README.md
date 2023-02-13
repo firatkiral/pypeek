@@ -49,6 +49,8 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 
 - Windows, macOS, Linux on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
 
+*Need help for **Wayland** support. If you are interested, please create a pull request or open an issue.*
+
 ### Install:
 
 ```console
