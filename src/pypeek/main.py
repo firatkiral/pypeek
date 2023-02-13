@@ -1,4 +1,5 @@
 import os, shutil, time, subprocess, configparser, sys, requests, math, distutils.spawn, logging
+from logging.handlers import RotatingFileHandler
 from .shortcut import create_shortcut
 from .drawover import DrawOver
 from .ffmpeg import get_ffmpeg
@@ -7,22 +8,23 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.9.1'
+__version__ = '2.9.2'
 
 def init():
     global user_path, app_path, logger
     if user_path is not None:
         return
+    
     user_path = os.path.join(os.path.expanduser("~"), "Peek")
     if not os.path.exists(user_path):
         os.mkdir(user_path)
 
     logger = logging.getLogger()
-
     logging.basicConfig(
         filename=os.path.join(user_path, "peek.log"),
+        filemode='w',
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        level=logging.INFO,
+        level=logging.NOTSET
     )
 
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
@@ -710,7 +712,7 @@ class PyPeek(QMainWindow):
 
     def mousePressEvent(self, event):
         if not self.block_window_move:
-            if sys.platform == "linux":
+            if not sys.platform in ["win32", "darwin"]:
                 window = self.window().windowHandle()
                 window.startSystemMove()
             else:
@@ -1077,11 +1079,13 @@ class Capture(QThread):
                       "-progress", "pipe:1"]
 
         try:
-            # Shell = True, otherwise the terminal window pops up on Windows app
-            process = subprocess.Popen(systemcall, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
+            # Shell is True on windows, otherwise the terminal window pops up on Windows app
+            process = subprocess.Popen(systemcall, shell=sys.platform == "win32", stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='replace')
             while True:
                 realtime_output = process.stdout.readline()
                 if realtime_output == '' and process.poll() is not None:
+                    if process.returncode != 0:
+                        vidfile = None
                     break
                 if realtime_output:
                     if "frame=" in realtime_output:
@@ -1089,7 +1093,8 @@ class Capture(QThread):
                         if frame:
                             percent = math.ceil(Capture.map_range(int(frame), 0, vframes, self.progress_range[0], self.progress_range[1]))
                             self.progress_signal.emit(f"%{percent}")
-        except subprocess.CalledProcessError as e:
+        except Exception as e:
+            logger.error(e)
             vidfile = None
 
         return vidfile
