@@ -110,21 +110,10 @@ class PyPeek(QMainWindow):
         def mouseDoubleClickEvent(event):
             if self.capture.fullscreen:
                 return
-            if sys.platform != "win32":
-                if self.isMaximized():
+            if self.isMaximized():
                     self.showNormal()
-                else:
-                    self.showMaximized()
             else:
-                diff_pos = self.pos() - self.windowHandle().screen().geometry().topLeft()
-                diff_size = self.size() - self.windowHandle().screen().size()
-                if diff_pos.manhattanLength() > 30 or QPoint(*diff_size.toTuple()).manhattanLength() > 30:
-                    self.move(self.windowHandle().screen().geometry().topLeft())
-                    self.resize(self.windowHandle().screen().size())
-                else:
-                    # set to half screen size
-                    self.resize(self.windowHandle().screen().size() / 2)
-                    self.move(self.windowHandle().screen().geometry().topLeft() + QPoint(*self.windowHandle().screen().size().toTuple()) / 4)
+                self.showMaximized()
 
 
         self.frame.mouseDoubleClickEvent = mouseDoubleClickEvent
@@ -680,6 +669,8 @@ class PyPeek(QMainWindow):
     def set_mask(self):
         if self.capture.fullscreen:
             return
+        if self.drag_start_position: 
+            return
         self.timer.stop()
         self.clearFocus()
         empty_region = QRegion(QRect(QPoint(8,43), self.frame.size() - QSize(16, 51)), QRegion.RegionType.Rectangle)
@@ -756,24 +747,27 @@ class PyPeek(QMainWindow):
 
     def mousePressEvent(self, event):
         if not self.block_window_move:
-            if not sys.platform in ["win32", "darwin"]:
-                window = self.window().windowHandle()
-                window.startSystemMove()
-            else:
-                self.drag_start_position = event.globalPosition()
+            self.show_info_layout()
+            window = self.window().windowHandle()
+            window.startSystemMove()
+            self.drag_start_position = event.globalPosition()
                 
     def mouseMoveEvent(self, event):
         if not self.drag_start_position:
             return
 
-        diff = event.globalPosition() - self.drag_start_position
-        self.move(self.x() + int(diff.x()), self.y() + int(diff.y()))
-        self.drag_start_position = event.globalPosition()
+        # diff = event.globalPosition() - self.drag_start_position
+        # self.move(self.x() + int(diff.x()), self.y() + int(diff.y()))
+        # self.drag_start_position = event.globalPosition()
 
     def mouseReleaseEvent(self, event):
         self.drag_start_position = None
+        self.set_mask()
 
     def moveEvent(self, event):
+        if not self.capture.fullscreen: # maximize bug fix on win32 if user move
+            self.show_grips()
+            self.resize_grips()
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget, self.windowHandle().screen())
         self.pos_x, self.pos_y = PyPeek.get_global_position(self)
 
