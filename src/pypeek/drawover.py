@@ -164,7 +164,7 @@ class DrawOver(QMainWindow):
 
         window_width = self.image_width + 35
         window_height = self.image_height + 220 if self.is_sequence else self.image_height + 160
-        screen_size = QGuiApplication.primaryScreen().size()
+        screen_size = parent.windowHandle().screen().size() if parent else QGuiApplication.primaryScreen().size()
         pref_width = screen_size.width() * 0.8
         pref_height = screen_size.height() * 0.8
         if window_width > pref_width:
@@ -172,8 +172,14 @@ class DrawOver(QMainWindow):
         if window_height > pref_height:
             window_height = pref_height
 
+        parent_screen_x = 0
+        parent_screen_y = 0
+        if parent:
+            parent_screen_x = parent.windowHandle().screen().geometry().topLeft().x()
+            parent_screen_y = parent.windowHandle().screen().geometry().topLeft().y()
+
         self.resize(window_width, window_height)
-        self.move((screen_size.width() - self.width()) / 2, (screen_size.height() - self.height()) / 2)
+        self.move(((screen_size.width() - self.width()) / 2 ) + parent_screen_x, ((screen_size.height() - self.height()) / 2) + parent_screen_y )
         self.set_tool("select")
         self.setFocus()
 

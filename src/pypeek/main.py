@@ -131,6 +131,20 @@ class PyPeek(QMainWindow):
         # self.check_update_on_startup and self.check_update()
         self.try_lock()
 
+        # if app is off-screen move to primary display
+        def move_primary_display():
+            width = 0
+            height = 0
+            for screen in QApplication.instance().screens():
+                width += screen.size().width()
+                height += screen.size().height()
+
+            if self.pos_x > width or self.pos_y > height or self.pos_x < 0 or self.pos_y < 0:
+                self.pos_x = int((QGuiApplication.primaryScreen().size().width() - self.width()) / 2)
+                self.pos_y = int((QGuiApplication.primaryScreen().size().height() - self.height()) / 2)
+                self.move(self.pos_x, self.pos_y)
+        QTimer.singleShot(1000, move_primary_display)
+
     def create_header_widget(self):
         self.snapshot_button = PyPeek.create_button("", f"{app_path}/icon/camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.snapshot_button.setToolTip("Take a snapshot")
@@ -492,6 +506,9 @@ class PyPeek(QMainWindow):
         self.record_button.setText(f"{self.capture.v_ext.upper()}")
 
     def prepare_capture_ui(self):
+        # set active screen
+        self.capture.active_screen = self.windowHandle().screen()
+
         self.block_resize_event = True
         if not self.capture.fullscreen:
             self.block_window_move = True
@@ -509,7 +526,7 @@ class PyPeek(QMainWindow):
         self.stop_encoding_button.show()
         
         self.hide_grips()
-        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
+        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget, self.windowHandle().screen())
         self.capture.width = self.record_area_widget.width() 
         self.capture.height = self.record_area_widget.height()
         if not self.capture.fullscreen:
@@ -649,7 +666,6 @@ class PyPeek(QMainWindow):
         self.body_layout.setCurrentIndex(0)
         self.hide()
         self.show()
-        # QTimer.singleShot(1000, lambda: self.setFocus())
 
     def show_info_layout(self):
         self.clearMask()
@@ -736,7 +752,7 @@ class PyPeek(QMainWindow):
         self.drag_start_position = None
 
     def moveEvent(self, event):
-        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget)
+        self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget, self.windowHandle().screen())
         self.pos_x, self.pos_y = PyPeek.get_global_position(self)
 
     def resizeEvent(self, event):
@@ -761,9 +777,14 @@ class PyPeek(QMainWindow):
         self.try_lock_thread.terminate()
 
     @staticmethod
-    def get_global_position(widget):
+    def get_global_position(widget, screen=None):
+        screen_x = 0
+        screen_y = 0
+        if screen:
+            screen_x = screen.geometry().x()
+            screen_y = screen.geometry().y()
         pos = widget.mapToGlobal(QPoint(0, 0))
-        return pos.x(), pos.y()
+        return pos.x() - screen_x, pos.y() - screen_y
 
     @staticmethod
     def create_spinbox(default_value, min_value, max_value, callback):
@@ -963,6 +984,7 @@ class Capture(QThread):
         self.delay = 0
         self.duration = 0
         self.progress_range = (0, 100)
+        self.active_screen = None
 
     def run(self):
         self.halt = False
@@ -1140,13 +1162,14 @@ class Capture(QThread):
                 logger.error(e)
 
     def _snapshot(self, capture_count=None):
-        screenshot = QScreen.grabWindow(QApplication.instance().primaryScreen())
+        screen = self.active_screen or QApplication.instance().primaryScreen()
+        screenshot = QScreen.grabWindow(screen)
         if self.show_cursor:
             painter = QPainter(screenshot)
             painter.drawPixmap(QCursor.pos() - QPoint(7, 5), self.cursor_image)
             painter.end()
         
-        pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
+        pr = QScreen.devicePixelRatio(screen)
         screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
         if not self.fullscreen:
             screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
