@@ -84,6 +84,7 @@ class PyPeek(QMainWindow):
         self.setStyleSheet("* {font-size: 15px; color: #ddd;} QToolTip { color: #333;}")
         self.block_window_move = False
         self.block_resize_event = False
+        self.window_moving = False
 
         self.drawover_options = {}
 
@@ -691,7 +692,7 @@ class PyPeek(QMainWindow):
         self.destroy()
 
     def do_minimize_to_tray(self, show_notification = True):
-        if self.minimize_to_tray:
+        if self.minimize_to_tray and sys.platform != "linux":
             self.hide()
             self.tray_icon.show()
             show_notification and self.tray_icon.showMessage("Peek is recording!", "Peek minimized to tray icon and running in background", QSystemTrayIcon.MessageIcon.Information, 6000)
@@ -747,27 +748,29 @@ class PyPeek(QMainWindow):
 
     def mousePressEvent(self, event):
         if not self.block_window_move:
-            self.show_info_layout()
-            window = self.window().windowHandle()
-            window.startSystemMove()
             self.drag_start_position = event.globalPosition()
                 
     def mouseMoveEvent(self, event):
         if not self.drag_start_position:
             return
+        
+        if not self.window_moving:
+            self.window().windowHandle().startSystemMove()
+            self.show_info_layout()
+            self.window_moving = True
 
         # diff = event.globalPosition() - self.drag_start_position
         # self.move(self.x() + int(diff.x()), self.y() + int(diff.y()))
         # self.drag_start_position = event.globalPosition()
 
     def mouseReleaseEvent(self, event):
-        self.drag_start_position = None
-        self.set_mask()
+        if self.drag_start_position:
+            self.drag_start_position = None
+            if self.window_moving:
+                self.window_moving = False
+                self.set_mask()
 
     def moveEvent(self, event):
-        if not self.capture.fullscreen: # maximize bug fix on win32 if user move
-            self.show_grips()
-            self.resize_grips()
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget, self.windowHandle().screen())
         self.pos_x, self.pos_y = PyPeek.get_global_position(self)
 
