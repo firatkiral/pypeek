@@ -107,6 +107,13 @@ class PyPeek(QMainWindow):
         self.frame.setFrameStyle(1)
         self.frame.setStyleSheet("QFrame { border: 3px solid #333; border-radius: 5px;}")
         self.frame.setLayout(self.main_layout)
+        def mouseDoubleClickEvent(event):
+            if self.capture.fullscreen:
+                return
+            self.move(self.windowHandle().screen().geometry().topLeft())
+            self.resize(self.windowHandle().screen().size())
+
+        self.frame.mouseDoubleClickEvent = mouseDoubleClickEvent
         self.installEventFilter(self)
 
         # For win, right bottom corner resize handle
