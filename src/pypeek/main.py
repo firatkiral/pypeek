@@ -110,8 +110,22 @@ class PyPeek(QMainWindow):
         def mouseDoubleClickEvent(event):
             if self.capture.fullscreen:
                 return
-            self.move(self.windowHandle().screen().geometry().topLeft())
-            self.resize(self.windowHandle().screen().size())
+            if sys.platform != "win32":
+                if self.isMaximized():
+                    self.showNormal()
+                else:
+                    self.showMaximized()
+            else:
+                diff_pos = self.pos() - self.windowHandle().screen().geometry().topLeft()
+                diff_size = self.size() - self.windowHandle().screen().size()
+                if diff_pos.manhattanLength() > 30 or QPoint(*diff_size.toTuple()).manhattanLength() > 30:
+                    self.move(self.windowHandle().screen().geometry().topLeft())
+                    self.resize(self.windowHandle().screen().size())
+                else:
+                    # set to half screen size
+                    self.resize(self.windowHandle().screen().size() / 2)
+                    self.move(self.windowHandle().screen().geometry().topLeft() + QPoint(*self.windowHandle().screen().size().toTuple()) / 4)
+
 
         self.frame.mouseDoubleClickEvent = mouseDoubleClickEvent
         self.installEventFilter(self)
@@ -142,12 +156,14 @@ class PyPeek(QMainWindow):
         def move_primary_display():
             for screen in QApplication.instance().screens():
                 # check if position is inside of the any screen geometry
-                if self.pos_x > screen.geometry().topLeft().x() and self.pos_y > screen.geometry().topLeft().y() and self.pos_x < screen.geometry().bottomRight().x() and self.pos_y < screen.geometry().bottomRight().y():
+                if self.pos_x >= screen.geometry().topLeft().x() and self.pos_y >= screen.geometry().topLeft().y() and self.pos_x <= screen.geometry().bottomRight().x() and self.pos_y <= screen.geometry().bottomRight().y():
                     return
 
             self.pos_x = int((QGuiApplication.primaryScreen().size().width() - self.width()) / 2)
             self.pos_y = int((QGuiApplication.primaryScreen().size().height() - self.height()) / 2)
+            # reset position and size
             self.move(self.pos_x, self.pos_y)
+            self.resize(QGuiApplication.primaryScreen().size() / 2)
                 
         QTimer.singleShot(1000, move_primary_display)
 
