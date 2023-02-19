@@ -140,16 +140,15 @@ class PyPeek(QMainWindow):
 
         # if app is off-screen move to primary display
         def move_primary_display():
-            width = 0
-            height = 0
             for screen in QApplication.instance().screens():
-                width += screen.size().width()
-                height += screen.size().height()
+                # check if position is inside of the any screen geometry
+                if self.pos_x > screen.geometry().topLeft().x() and self.pos_y > screen.geometry().topLeft().y() and self.pos_x < screen.geometry().bottomRight().x() and self.pos_y < screen.geometry().bottomRight().y():
+                    return
 
-            if self.pos_x > width or self.pos_y > height or self.pos_x < 0 or self.pos_y < 0:
-                self.pos_x = int((QGuiApplication.primaryScreen().size().width() - self.width()) / 2)
-                self.pos_y = int((QGuiApplication.primaryScreen().size().height() - self.height()) / 2)
-                self.move(self.pos_x, self.pos_y)
+            self.pos_x = int((QGuiApplication.primaryScreen().size().width() - self.width()) / 2)
+            self.pos_y = int((QGuiApplication.primaryScreen().size().height() - self.height()) / 2)
+            self.move(self.pos_x, self.pos_y)
+                
         QTimer.singleShot(1000, move_primary_display)
 
     def create_header_widget(self):
