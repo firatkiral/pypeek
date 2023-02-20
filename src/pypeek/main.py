@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.9.3'
+__version__ = '2.9.4'
 
 def init():
     global user_path, app_path, logger
@@ -109,6 +109,8 @@ class PyPeek(QMainWindow):
         self.frame.setStyleSheet("QFrame { border: 3px solid #333; border-radius: 5px;}")
         self.frame.setLayout(self.main_layout)
         def mouseDoubleClickEvent(event):
+            if self.block_window_move:
+                return
             self.show_info_layout()
             if self.capture.fullscreen:
                 return
@@ -116,7 +118,6 @@ class PyPeek(QMainWindow):
                     self.showNormal()
             else:
                 self.showMaximized()
-
 
         self.frame.mouseDoubleClickEvent = mouseDoubleClickEvent
         self.installEventFilter(self)
@@ -749,8 +750,10 @@ class PyPeek(QMainWindow):
             self.settings_widget.hide()
 
     def mousePressEvent(self, event):
-        if not self.block_window_move:
-            self.drag_start_position = event.globalPosition()
+        if self.block_window_move:
+            return
+        
+        self.drag_start_position = event.globalPosition()
                 
     def mouseMoveEvent(self, event):
         if not self.drag_start_position:
@@ -766,11 +769,11 @@ class PyPeek(QMainWindow):
         # self.drag_start_position = event.globalPosition()
 
     def mouseReleaseEvent(self, event):
-        if self.drag_start_position:
-            self.drag_start_position = None
-            if self.window_moving:
-                self.window_moving = False
-                self.set_mask()
+        if self.window_moving:
+            self.set_mask()
+        
+        self.drag_start_position = None
+        self.window_moving = False
 
     def moveEvent(self, event):
         self.capture.pos_x, self.capture.pos_y = PyPeek.get_global_position(self.record_area_widget, self.windowHandle().screen())
