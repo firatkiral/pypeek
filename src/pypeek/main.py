@@ -115,6 +115,7 @@ class PyPeek(QMainWindow):
                     self.showNormal()
             else:
                 self.showMaximized()
+            self.show_info_layout()
 
 
         self.frame.mouseDoubleClickEvent = mouseDoubleClickEvent
@@ -678,8 +679,9 @@ class PyPeek(QMainWindow):
         region = QRegion(QRect(QPoint(-2,-2), self.frame.size() + QSize(4, 4)), QRegion.RegionType.Rectangle)
         self.setMask(region - empty_region)
         self.body_layout.setCurrentIndex(0)
-        self.hide()
-        self.show()
+        if sys.platform == "darwin":
+            self.hide()
+            self.show()
 
     def show_info_layout(self):
         self.clearMask()
