@@ -109,13 +109,13 @@ class PyPeek(QMainWindow):
         self.frame.setStyleSheet("QFrame { border: 3px solid #333; border-radius: 5px;}")
         self.frame.setLayout(self.main_layout)
         def mouseDoubleClickEvent(event):
+            self.show_info_layout()
             if self.capture.fullscreen:
                 return
             if self.isMaximized():
                     self.showNormal()
             else:
                 self.showMaximized()
-            self.show_info_layout()
 
 
         self.frame.mouseDoubleClickEvent = mouseDoubleClickEvent
@@ -757,8 +757,8 @@ class PyPeek(QMainWindow):
             return
         
         if not self.window_moving:
-            self.window().windowHandle().startSystemMove()
             self.show_info_layout()
+            self.window().windowHandle().startSystemMove()
             self.window_moving = True
 
         # diff = event.globalPosition() - self.drag_start_position
