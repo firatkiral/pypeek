@@ -489,6 +489,7 @@ class DrawOver(QMainWindow):
         timeline_widget = QWidget()
         # timeline_widget.setStyleSheet( "QWidget {background-color: #2a2a2a; border-radius: 5px; padding: 5px;}")
         timeline_widget.setLayout(layout)
+        self.timeline = timeline
         return timeline_widget
 
     def create_color_tool(self):
@@ -944,6 +945,7 @@ class DrawOver(QMainWindow):
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
 
     def closeEvent(self, event):
+        self.slider and self.timeline.stop()
         self._parent.update_drawover_settings(self)
         if self.reset_parent_onclose:
             self._parent.end_capture_ui()
