@@ -63,6 +63,7 @@ class PyPeek(QMainWindow):
         self.capture.show_cursor = True
         self.capture.fullscreen = True
         self.capture.v_ext = "gif" # gif, mp4, webm
+        self.capture.i_ext = "jpg" # png or jpg
         self.capture.fps = 15
         self.capture.quality = "md" # md, hi
         self.capture.delay = 3
@@ -302,6 +303,7 @@ class PyPeek(QMainWindow):
         self.cursor_widget = PyPeek.create_row_widget("Capture Cursor", "Capture mouse cursor", PyPeek.create_checkbox("", self.capture.show_cursor, self.show_cursor ))
         self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray", "Minimize app to tray icon when recording fullscreen", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
+        self.img_format_widget = PyPeek.create_row_widget("Image Format", "Set the image format for the snapshot", PyPeek.create_radio_button({"png":"PNG", "jpg":"JPG"}, self.capture.i_ext, self.set_img_format))
         self.quality_widget = PyPeek.create_row_widget("Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.duration_widget = PyPeek.create_row_widget("Recording Limit", "Stop recording after a given time in seconds (0 = unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
@@ -317,6 +319,8 @@ class PyPeek(QMainWindow):
         self.settings_layout.addWidget(self.hide_app_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.framerate_widget)
+        self.settings_layout.addWidget(PyPeek.create_h_divider())
+        self.settings_layout.addWidget(self.img_format_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
         self.settings_layout.addWidget(self.quality_widget)
         self.settings_layout.addWidget(PyPeek.create_h_divider())
@@ -407,6 +411,7 @@ class PyPeek(QMainWindow):
         self.capture.fullscreen = config.getboolean('capture', 'fullscreen', fallback=True)
         self.capture.v_ext = config.get('capture', 'v_ext', fallback='gif')
         self.capture.fps = config.getint('capture', 'fps', fallback=15)
+        self.capture.i_ext = config.get('capture', 'img_format', fallback='jpg')
         self.capture.quality = config.get('capture', 'quality', fallback='md')
         self.capture.delay = config.getint('capture', 'delay', fallback=3)
         self.capture.duration = config.getint('capture', 'duration', fallback=0)
@@ -435,6 +440,7 @@ class PyPeek(QMainWindow):
             'fullscreen': str(self.capture.fullscreen),
             'v_ext': self.capture.v_ext,
             'fps': str(self.capture.fps),
+            'img_format': self.capture.i_ext,
             'quality': self.capture.quality,
             'delay': str(self.capture.delay),
             'duration': str(self.capture.duration),
@@ -619,7 +625,7 @@ class PyPeek(QMainWindow):
             
         filename = f"peek{os.path.splitext(os.path.basename(filepath))[1]}"
         self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
-        new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), "Images (*.jpg)")
+        new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), f"Images (*.{self.capture.i_ext})")
         
         if new_filepath[0]:
             try:
@@ -702,6 +708,9 @@ class PyPeek(QMainWindow):
 
     def set_quality(self, value):
         self.capture.quality = value
+
+    def set_img_format(self, value):
+        self.capture.i_ext = value
 
     def set_fullscreen(self, value=True):
         self.block_resize_event = True
@@ -1009,6 +1018,7 @@ class Capture(QThread):
         self.duration = 0
         self.progress_range = (0, 100)
         self.active_screen = None
+        self.i_ext = "png"
 
     def run(self):
         self.halt = False
@@ -1049,7 +1059,7 @@ class Capture(QThread):
             self.progress_range = (0, 100)
             if self.encode_options and self.encode_options["drawover_image_path"]:
                 self.progress_range = (0, 50)
-                self._drawover()
+                self.encoding_drawover()
                 self.progress_range = (50, 100)
             video_file = self.encode_video()
             self.encoding_done_signal.emit(video_file)
@@ -1061,7 +1071,7 @@ class Capture(QThread):
                 return
             self.fullscreen and self.hide_app_signal.emit()
             time.sleep(.2) # give app time to hide
-            filepath = self._snapshot()
+            filepath = self._snapshot(None, self.i_ext)
             self.snapshot_done_signal.emit(filepath)
 
         self.quit()
@@ -1096,7 +1106,7 @@ class Capture(QThread):
         self.encode_options = encode_options
         self.start()
     
-    def _drawover(self):
+    def encoding_drawover(self):
         drawover_pixmap = QPixmap(self.encode_options["drawover_image_path"])
         pos = QPoint()
         rng = self.encode_options["drawover_range"] or (0, self.capture_count)
@@ -1105,6 +1115,7 @@ class Capture(QThread):
             filename = f'{self.current_cache_folder}/peek_{self.UID}_{str(i).zfill(6)}.jpg'
             pixmap = QPixmap(filename)
             painter = QPainter(pixmap)
+            painter.setRenderHint(QPainter.Antialiasing,True)
             painter.drawPixmap(pos, drawover_pixmap)
             painter.end()
             pixmap.save(filename, "jpg", 100)
@@ -1163,12 +1174,13 @@ class Capture(QThread):
 
     def snapshot_drawover(self, drawover_image_path):
         drawover_pixmap = QPixmap(drawover_image_path)
-        filename = f'{self.current_cache_folder}/peek_{self.UID}.jpg'
+        filename = f'{self.current_cache_folder}/peek_{self.UID}.{self.i_ext}'
         pixmap = QPixmap(filename)
         painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing,True)
         painter.drawPixmap(QPoint(), drawover_pixmap)
         painter.end()
-        pixmap.save(filename, "jpg", 100)
+        pixmap.save(filename, self.i_ext, 100)
         return filename
 
     def clear_cache_files(self):
@@ -1185,7 +1197,7 @@ class Capture(QThread):
             except Exception as e:
                 logger.error(e)
 
-    def _snapshot(self, capture_count=None):
+    def _snapshot(self, capture_count=None, i_ext="jpg"):
         screen = self.active_screen or QApplication.instance().primaryScreen()
         screenshot = QScreen.grabWindow(screen)
         if self.show_cursor:
@@ -1199,10 +1211,10 @@ class Capture(QThread):
             screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
 
         not os.path.exists(self.current_cache_folder) and os.makedirs(self.current_cache_folder)
-        file_path = (f'{self.current_cache_folder}/peek_{self.UID}.jpg')
-        file_path = file_path[:-4] + f'_{capture_count:06d}.jpg' if capture_count != None else file_path
+        file_path = (f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}')
+        file_path = file_path[:-4] + f'_{capture_count:06d}.{i_ext}' if capture_count != None else file_path
 
-        screenshot.save(file_path, 'jpg', 100)
+        screenshot.save(file_path, i_ext, 100)
         return file_path
     
     @staticmethod
