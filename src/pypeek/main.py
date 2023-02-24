@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.9.5'
+__version__ = '2.9.6'
 
 def init():
     global user_path, app_path, logger
@@ -309,7 +309,7 @@ class PyPeek(QMainWindow):
         self.duration_widget = PyPeek.create_row_widget("Recording Limit", "Stop recording after a given time in seconds (0 = unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
         self.update_widget = PyPeek.create_row_widget("Check For Updates", "Check for updates on startup", PyPeek.create_checkbox("", self.check_update_on_startup, self.set_check_update_on_startup))
         self.reset_widget = PyPeek.create_row_widget("Reset And Restart", "Reset all settings and restart the app", PyPeek.create_button("Reset Settings", callback = self.reset_settings))
-        self.copyright_widget = PyPeek.create_row_widget("About", f"Peek {__version__}, Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek/wiki"))
+        self.copyright_widget = PyPeek.create_row_widget("About", f"Peek {__version__} - Cross platform screen recorder", PyPeek.create_hyperlink("Website", "https://github.com/firatkiral/pypeek/wiki"))
 
         self.settings_layout = QVBoxLayout()
         self.settings_layout.setContentsMargins(20, 10, 20, 10)
@@ -952,7 +952,7 @@ class PyPeek(QMainWindow):
 
     @staticmethod
     def create_hyperlink(text, url):
-        link = QLabel(f'<a href="{url}">{text}</a>')
+        link = QLabel(f'<a href="{url}"><span style="color:white;">{text}</span></a>')
         link.setStyleSheet("QLabel { color: #aaa; }")
         link.setOpenExternalLinks(True)
         return link
