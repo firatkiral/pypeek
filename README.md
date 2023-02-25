@@ -21,7 +21,7 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 ## Features
 
 - Record your screen as gif or mp4
-- Capture a screenshot as jpg
+- Capture a screenshot as jpg or png
 - Record a selected area or the whole screen
 - Annotation features like drawing, text, arrows, and highlights
 - Delay recording start with a countdown
