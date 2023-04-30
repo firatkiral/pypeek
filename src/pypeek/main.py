@@ -1202,9 +1202,9 @@ class Capture(QThread):
         screenshot = QScreen.grabWindow(screen)
         if self.show_cursor:
             painter = QPainter(screenshot)
-            painter.drawPixmap(QCursor.pos() - QPoint(7, 5), self.cursor_image)
+            painter.drawPixmap(QCursor.pos(screen) - QPoint(screen.geometry().x(), screen.geometry().y()) - QPoint(7, 5), self.cursor_image)
             painter.end()
-        
+
         pr = QScreen.devicePixelRatio(screen)
         screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
         if not self.fullscreen:
