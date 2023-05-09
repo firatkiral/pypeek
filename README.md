@@ -27,6 +27,9 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 - Delay recording start with a countdown
 - Limit recording to a fixed time
 
+<br/>
+
+[Blog post](https://kiral.net/peek-simplify-screen-recordings/)
 
 <br/>
 
