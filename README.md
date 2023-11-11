@@ -46,7 +46,7 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 
 ### Requirements:
 
-- Python 3.10 or later
+- Python 3.10 and 3.11
 
 - Ffmpeg [Optional], it will be downloaded if not found in system path.
 
