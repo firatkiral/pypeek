@@ -57,19 +57,20 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 ### Install:
 
 ```console
-$ pip install pypeek
+pip install pypeek
 ```
 
 ### Usage:
 
 ```console
-$ pypeek
+pypeek
 ```
 
 ### Create a desktop shortcut:
+Make sure you run the pypeek command at least once before creating a shortcut.
 
 ```console
-$ pypeek --shortcut
+pypeek --shortcut
 ```
 
 ### Import as a module:
@@ -83,19 +84,19 @@ pypeek.show()
 ### Run as a module:
 
 ```console
-$ python -m pypeek
+python -m pypeek
 ```
 
 ### Update:
 
 ```console
-$ pip install --upgrade pypeek
+pip install --upgrade pypeek
 ```
 
 ### Uninstall:
 
 ```console
-$ pip uninstall pypeek
+pip uninstall pypeek
 ```
 
 <br/>

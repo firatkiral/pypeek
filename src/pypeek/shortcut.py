@@ -14,7 +14,7 @@ def win():
     script = f'''
     $WshShell = New-Object -ComObject WScript.Shell
     $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
-    $Shortcut.TargetPath = "peek-gui"
+    $Shortcut.TargetPath = "pypeek-gui.exe"
     $Shortcut.IconLocation = "{icon_path}"
     $Shortcut.Save()
     '''
