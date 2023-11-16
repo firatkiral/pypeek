@@ -1,4 +1,5 @@
 import os, shutil, time, subprocess, configparser, sys, requests, math, distutils.spawn, logging
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from .shortcut import create_shortcut
 from .drawover import DrawOver
@@ -622,8 +623,11 @@ class PyPeek(QMainWindow):
         filepath = drawover.image_path
         if drawover.encode_options and drawover.encode_options["drawover_image_path"]:
             filepath = self.capture.snapshot_drawover(drawover.encode_options["drawover_image_path"])
-            
-        filename = f"peek{os.path.splitext(os.path.basename(filepath))[1]}"
+        
+        now = datetime.now()
+        date_time = now.strftime("%Y-%m-%d_%H-%M")
+
+        filename = f"peek_{date_time}{os.path.splitext(os.path.basename(filepath))[1]}"
         self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
         new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), f"Images (*.{self.capture.i_ext})")
         
@@ -655,7 +659,10 @@ class PyPeek(QMainWindow):
 
     def encoding_done(self, filepath):
         if filepath:
-            filename = f"peek{os.path.splitext(os.path.basename(filepath))[1]}"
+            now = datetime.now()
+            date_time = now.strftime("%Y-%m-%d_%H-%M")
+
+            filename = f"peek_{date_time}{os.path.splitext(os.path.basename(filepath))[1]}"
             self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
             new_filepath = QFileDialog.getSaveFileName(self, "Save Video", os.path.join(self.last_save_path, filename), f"Videos (*.{self.capture.v_ext})")
             
