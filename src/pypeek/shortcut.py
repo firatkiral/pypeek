@@ -18,22 +18,13 @@ def win():
     $Shortcut.IconLocation = "{icon_path}"
     $Shortcut.Save()
     '''
-    # script = f'''
-    # $WshShell = New-Object -ComObject WScript.Shell
-    # $Shortcut = $WshShell.CreateShortcut("{shortcut_path}")
-    # $Shortcut.TargetPath = "python"
-    # $Shortcut.Arguments = "-m peek"
-    # $Shortcut.IconLocation = "{icon_path}"
-    # $Shortcut.WindowStyle = 7
-    # $Shortcut.Save()
-    # '''
     subprocess.run(["powershell", "-ExecutionPolicy", "Bypass", "-Command", script])
 
 def mac():
     script = f'''
         tell application "Terminal"
             if not (exists window 1) then reopen
-            do script "peek-gui" in window 1
+            do script "pypeek-gui" in window 1
         end tell 
         '''
 

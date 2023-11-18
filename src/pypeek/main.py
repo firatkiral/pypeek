@@ -1,4 +1,4 @@
-import os, shutil, time, subprocess, configparser, sys, requests, math, distutils.spawn, logging
+import os, shutil, time, subprocess, configparser, sys, requests, math, logging
 from logging.handlers import RotatingFileHandler
 from .shortcut import create_shortcut
 from .drawover import DrawOver
@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.9.12'
+__version__ = '2.10.0'
 
 def init():
     global user_path, app_path, logger
@@ -32,7 +32,7 @@ def init():
         os.environ["PATH"] = os.pathsep.join([app_path, os.environ["PATH"]])
     elif __file__:
         ffmpeg_local = os.path.abspath(os.path.dirname(__file__))+"/bin"
-        if(not distutils.spawn.find_executable("ffmpeg") and not distutils.spawn.find_executable("ffmpeg", ffmpeg_local)): 
+        if(not shutil.which("ffmpeg") and not shutil.which("ffmpeg", path=ffmpeg_local)): 
             if input("Ffmpeg not found, download? (y/n): ").lower() == "y":
                 get_ffmpeg()
             else:
@@ -1244,7 +1244,7 @@ class TryLock(QThread):
 
     def run(self):
         while True:
-            if self.lock_file.tryLock():
+            if self.lock_file.tryLock(2000):
                 break
 
             time.sleep(1)
@@ -1252,7 +1252,7 @@ class TryLock(QThread):
         self.quit()
     
     def try_lock(self):
-        return self.lock_file.tryLock()
+        return self.lock_file.tryLock(2000)
 
 
 app = QApplication(sys.argv)
