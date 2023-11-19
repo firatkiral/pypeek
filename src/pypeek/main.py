@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.2'
+__version__ = '2.10.3'
 
 def init():
     global user_path, app_path, logger
@@ -1277,7 +1277,7 @@ def show():
             print("pypeek v" + __version__)
             return
         if sys.argv[1] == "-s" or sys.argv[1] == "--shortcut":
-            create_shortcut()
+            create_shortcut(__version__)
             return
     
     _show()

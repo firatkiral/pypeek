@@ -31,11 +31,31 @@ def mac():
     subprocess.run(["osacompile", "-o", f"{desktop_path}/peek.app", "-e", script])
     shutil.copy(f"{dir_path}/icon/peek.icns", f"{desktop_path}/peek.app/Contents/Resources/applet.icns")
 
-def create_shortcut():
+def linux(version):
+    icon_path = f"{dir_path}/icon/peek.ico"
+
+    script = f'''[Desktop Entry]
+Version={version}
+Type=Application
+Name=Peek
+Comment=Screen Recorder and Screenshot with Annotation
+Exec=pypeek-gui
+Icon={icon_path}
+Terminal=false
+StartupNotify=false
+Categories=Utility;'''
+
+    with open(f'/{os.path.expanduser("~")}/.local/share/applications/peek.desktop', "w") as f:
+        f.write(script)
+
+
+def create_shortcut(version):
     if sys.platform == 'win32':
         win()
     elif sys.platform == 'darwin':
         mac()
+    elif sys.platform == 'linux':
+        linux(version)
     else:
         print(f"{sys.platform} is not supported yet.")
         pass

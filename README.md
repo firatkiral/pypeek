@@ -83,7 +83,7 @@ pypeek
 ```
 
 ### Create a desktop shortcut:
-Make sure you run the pypeek command at least once before creating a shortcut.
+Make sure you run the pypeek command at least once before creating a shortcut. On Linux it will create an app inside applications, on Windows and MacOS it will create a desktop shortcut.
 
 ```console
 pypeek --shortcut
