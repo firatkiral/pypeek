@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.0'
+__version__ = '2.10.1'
 
 def init():
     global user_path, app_path, logger

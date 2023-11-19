@@ -50,11 +50,21 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 
 - Ffmpeg [Optional], it will be downloaded if not found in system path.
 
-- Windows, macOS, Linux on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
+- Windows, MacOS, Ubuntu on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
 
-*Need help for **Wayland** support. If you are interested, please create a pull request or open an issue.*
+*Need help for Ubuntu **Wayland** support. If you are interested, please create a pull request or open an issue.*
 
-### Install:
+#### Known Issues:
+
+- On Ubuntu (on Xorg), if you get *"qt.qpa.plugin: Could not load the Qt platform plugin "xcb"..."* error, install the following packages:
+
+```console
+sudo apt install libxcb-*
+```
+
+<br/>
+
+### Intallation:
 
 ```console
 pip install pypeek
