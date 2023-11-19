@@ -46,20 +46,26 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 
 ### Requirements:
 
-- Python 3.10 or later
+- Python 3.9 or later
 
 - Ffmpeg [Optional], it will be downloaded if not found in system path.
 
-- Windows, MacOS, Ubuntu on Xorg ([How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
+- Windows, MacOS, Linux: Debian based distros on Xorg, Classic or X11. No Wayland support yet. (see [How to switch to Xorg](https://itsfoss.com/switch-xorg-wayland/))
 
-*Need help for Ubuntu **Wayland** support. If you are interested, please create a pull request or open an issue.*
+*Need help for Linux **Wayland** support. If you are interested, please create a pull request or open an issue.*
 
 #### Known Issues:
 
-- On Ubuntu (on Xorg), if you get *"qt.qpa.plugin: Could not load the Qt platform plugin "xcb"..."* error, install the following packages:
+- Linux: *"qt.qpa.plugin: Could not load the Qt platform plugin "xcb"..."*, install the following packages:
 
 ```console
 sudo apt install libxcb-*
+```
+
+- Linux: *"ImportError: libdouble-conversion.so.3: cannot open shared object file: No such file or directory"* error, install the following package:
+
+```console
+sudo apt install libdouble-conversion3
 ```
 
 <br/>
