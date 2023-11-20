@@ -8,16 +8,26 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.3'
+__version__ = '2.10.4'
 
 def init():
     global user_path, app_path, logger
     if user_path is not None:
         return
     
-    user_path = os.path.join(os.path.expanduser("~"), "Peek")
+    if sys.platform == 'darwin':
+        user_path = os.path.join(os.path.expanduser("~"), "Library/Preferences/Peek")
+    elif sys.platform == 'win32':
+        user_path = os.path.join(os.path.expanduser("~"), "AppData/Local/Peek")
+    elif sys.platform == 'linux':
+        user_path = os.path.join(os.path.expanduser("~"), ".config/Peek")
+    else:
+        user_path = os.path.join(os.path.expanduser("~"), ".peek")
+    
     if not os.path.exists(user_path):
         os.mkdir(user_path)
+
+    print(f"User path: {user_path}")
 
     logger = logging.getLogger()
     logging.basicConfig(
