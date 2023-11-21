@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.5'
+__version__ = '2.10.6'
 
 def init():
     global user_path, app_path, logger
@@ -630,8 +630,19 @@ class PyPeek(QMainWindow):
         filepath = drawover.image_path
         if drawover.encode_options and drawover.encode_options["drawover_image_path"]:
             filepath = self.capture.snapshot_drawover(drawover.encode_options["drawover_image_path"])
-            
-        filename = f"peek{os.path.splitext(os.path.basename(filepath))[1]}"
+        
+        filename = "peek"
+        ext = os.path.splitext(os.path.basename(filepath))[1]
+        numbers = [0]
+        files = [f for f in os.listdir(self.last_save_path) if os.path.isfile(os.path.join(self.last_save_path, f)) and f.startswith(filename)]
+        for file in files:
+            name = os.path.splitext(file)[0]
+            number = name.split("_")[1] if "_" in file else 1
+            number = int(number if number.isdigit() else 1)
+            numbers.append(number)
+        number = max(numbers) + 1
+
+        filename = f"peek_{str(number)}{ext}"
         self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
         new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), f"Images (*.{self.capture.i_ext})")
         
@@ -663,7 +674,18 @@ class PyPeek(QMainWindow):
 
     def encoding_done(self, filepath):
         if filepath:
-            filename = f"peek{os.path.splitext(os.path.basename(filepath))[1]}"
+            filename = "peek"
+            ext = os.path.splitext(os.path.basename(filepath))[1]
+            numbers = [0]
+            files = [f for f in os.listdir(self.last_save_path) if os.path.isfile(os.path.join(self.last_save_path, f)) and f.startswith(filename)]
+            for file in files:
+                name = os.path.splitext(file)[0]
+                number = name.split("_")[1] if "_" in file else 1
+                number = int(number if number.isdigit() else 1)
+                numbers.append(number)
+            number = max(numbers) + 1
+
+            filename = f"peek_{str(number)}{ext}"
             self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
             new_filepath = QFileDialog.getSaveFileName(self, "Save Video", os.path.join(self.last_save_path, filename), f"Videos (*.{self.capture.v_ext})")
             
