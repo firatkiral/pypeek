@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.6'
+__version__ = '2.10.7'
 
 def init():
     global user_path, app_path, logger
@@ -173,7 +173,7 @@ class PyPeek(QMainWindow):
         self.snapshot_button.setToolTip("Take a snapshot")
         self.snapshot_button.clicked.connect(self.snapshot)
 
-        self.record_button = PyPeek.create_button(f"{self.capture.v_ext.upper()}", f"{app_path}/icon/record-fill.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
+        self.record_button = PyPeek.create_button(f"{self.capture.v_ext.upper()}", f"{app_path}/icon/video-camera.png", "#0d6efd", "#0b5ed7", "#0a58ca" )
         self.record_button.setFixedWidth(84)
         self.record_button.setToolTip("Start recording")
         self.record_button.clicked.connect(self.record)
@@ -577,7 +577,7 @@ class PyPeek(QMainWindow):
         self.stop_button.hide()
         self.record_button.setDisabled(False)
         self.record_button.setText(self.capture.v_ext.upper())
-        self.record_button.setIcon(QIcon(f"{app_path}/icon/record-fill.png"))
+        self.record_button.setIcon(QIcon(f"{app_path}/icon/video-camera.png"))
         self.record_button.setToolTip("Start recording")
         self.stop_button.setText("")
         self.format_button.setDisabled(False)
