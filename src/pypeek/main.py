@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.7'
+__version__ = '2.10.8'
 
 def init():
     global user_path, app_path, logger
@@ -680,7 +680,7 @@ class PyPeek(QMainWindow):
             files = [f for f in os.listdir(self.last_save_path) if os.path.isfile(os.path.join(self.last_save_path, f)) and f.startswith(filename)]
             for file in files:
                 name = os.path.splitext(file)[0]
-                number = name.split("_")[1] if "_" in file else 1
+                number = name.split("_")[1] if "_" in file else "1"
                 number = int(number if number.isdigit() else 1)
                 numbers.append(number)
             number = max(numbers) + 1
