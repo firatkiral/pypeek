@@ -8,7 +8,7 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 
 user_path, app_path, logger = None, None, None
-__version__ = '2.10.8'
+__version__ = '2.10.9'
 
 def init():
     global user_path, app_path, logger
@@ -633,14 +633,9 @@ class PyPeek(QMainWindow):
         
         filename = "peek"
         ext = os.path.splitext(os.path.basename(filepath))[1]
-        numbers = [0]
-        files = [f for f in os.listdir(self.last_save_path) if os.path.isfile(os.path.join(self.last_save_path, f)) and f.startswith(filename)]
-        for file in files:
-            name = os.path.splitext(file)[0]
-            number = name.split("_")[1] if "_" in file else 1
-            number = int(number if number.isdigit() else 1)
-            numbers.append(number)
-        number = max(numbers) + 1
+        number = 1
+        while os.path.isfile(os.path.join(self.last_save_path, f"peek_{str(number)}{ext}")):
+            number += 1
 
         filename = f"peek_{str(number)}{ext}"
         self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
@@ -676,14 +671,10 @@ class PyPeek(QMainWindow):
         if filepath:
             filename = "peek"
             ext = os.path.splitext(os.path.basename(filepath))[1]
-            numbers = [0]
-            files = [f for f in os.listdir(self.last_save_path) if os.path.isfile(os.path.join(self.last_save_path, f)) and f.startswith(filename)]
-            for file in files:
-                name = os.path.splitext(file)[0]
-                number = name.split("_")[1] if "_" in file else "1"
-                number = int(number if number.isdigit() else 1)
-                numbers.append(number)
-            number = max(numbers) + 1
+            number = 1
+
+            while os.path.isfile(os.path.join(self.last_save_path, f"peek_{str(number)}{ext}")):
+                number += 1
 
             filename = f"peek_{str(number)}{ext}"
             self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
