@@ -162,8 +162,10 @@ class DrawOver(QMainWindow):
 
         self.setCentralWidget(main_widget)
 
-        window_width = self.image_width + 35
-        window_height = self.image_height + 220 if self.is_sequence else self.image_height + 160
+        pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
+
+        window_width = self.image_width / pr + 35
+        window_height = self.image_height / pr + 220 if self.is_sequence else self.image_height / pr + 160
         screen_size = parent.windowHandle().screen().size() if parent else QGuiApplication.primaryScreen().size()
         pref_width = screen_size.width() * 0.8
         pref_height = screen_size.height() * 0.8
@@ -178,10 +180,12 @@ class DrawOver(QMainWindow):
             parent_screen_x = parent.windowHandle().screen().geometry().topLeft().x()
             parent_screen_y = parent.windowHandle().screen().geometry().topLeft().y()
 
+        self.reset_zoom()
         self.resize(window_width, window_height)
         self.move(((screen_size.width() - self.width()) / 2 ) + parent_screen_x, ((screen_size.height() - self.height()) / 2) + parent_screen_y )
         self.set_tool("select")
         self.setFocus()
+
 
     def zoom_in(self):
         scale_tr = QTransform()
@@ -198,7 +202,11 @@ class DrawOver(QMainWindow):
         self.view.setTransform(tr)
     
     def reset_zoom(self):
-        self.view.resetTransform()
+        # self.view.resetTransform()
+        pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
+        scale_tr = QTransform()
+        scale_tr.scale(1/pr, 1/pr)
+        self.view.setTransform(scale_tr)
     
     def clear_canvas(self):
         self.undo_history.push(ClearSceneCmd(self))

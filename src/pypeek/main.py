@@ -1221,21 +1221,26 @@ class Capture(QThread):
     def _snapshot(self, capture_count=None, i_ext="jpg"):
         screen = self.active_screen or QApplication.instance().primaryScreen()
         screenshot = QScreen.grabWindow(screen)
+        pr = QScreen.devicePixelRatio(screen)
+
         if self.show_cursor:
             painter = QPainter(screenshot)
-            painter.drawPixmap(QCursor.pos(screen) - QPoint(screen.geometry().x(), screen.geometry().y()) - QPoint(7, 5), self.cursor_image)
+            painter.drawPixmap(QCursor.pos(screen) - QPoint(screen.geometry().x() * pr, screen.geometry().y() * pr) - QPoint(7, 5), self.cursor_image)
             painter.end()
-
-        pr = QScreen.devicePixelRatio(screen)
-        screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
+        
+        # screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
         if not self.fullscreen:
-            screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
+            screenshot = screenshot.copy(self.pos_x * pr, self.pos_y * pr, self.width * pr, self.height * pr)
 
         not os.path.exists(self.current_cache_folder) and os.makedirs(self.current_cache_folder)
         file_path = (f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}')
         file_path = file_path[:-4] + f'_{capture_count:06d}.{i_ext}' if capture_count != None else file_path
 
-        screenshot.save(file_path, i_ext, 100)
+        img = screenshot.toImage()
+        img.setDotsPerMeterX(img.dotsPerMeterX() * pr )
+        img.setDotsPerMeterY(img.dotsPerMeterY() * pr )
+
+        img.save(file_path, i_ext, 80)
         return file_path
     
     @staticmethod
