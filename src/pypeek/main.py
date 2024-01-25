@@ -191,8 +191,8 @@ class PyPeek(QMainWindow):
         self.stop_encoding_button.clicked.connect(self.stop_encoding)
         self.stop_encoding_button.hide()
 
-        self.fullscreen_button = PyPeek.create_button("", f"{app_path}/icon/display.png")
-        self.fullscreen_button.setToolTip("Record fullscreen" if not self.capture.fullscreen else "Record window")
+        self.fullscreen_button = PyPeek.create_button("", f"{app_path}/icon/window.png")
+        self.fullscreen_button.setToolTip("Recording window" if not self.capture.fullscreen else "Recording fullscreen")
         self.fullscreen_button.clicked.connect(lambda: self.set_fullscreen(not self.capture.fullscreen))
 
         self.format_button = PyPeek.create_button("", "", "#0d6efd", "#0b5ed7", "#0a58ca")
@@ -312,7 +312,7 @@ class PyPeek(QMainWindow):
         self.hide_app_widget = PyPeek.create_row_widget("Minimize To Tray", "Minimize app to tray icon when recording fullscreen", PyPeek.create_checkbox("", self.minimize_to_tray, self.set_minimize_to_tray ))
         self.framerate_widget = PyPeek.create_row_widget("Frame Rate", "Captured frames per second", PyPeek.create_spinbox(self.capture.fps, 1, 60, self.set_framerate ))
         self.img_format_widget = PyPeek.create_row_widget("Image Format", "Set the image format for screenshots", PyPeek.create_radio_button({"png":"PNG", "jpg":"JPG"}, self.capture.i_ext, self.set_img_format))
-        self.quality_widget = PyPeek.create_row_widget("Video Quality", "Set the quality of the video", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
+        self.quality_widget = PyPeek.create_row_widget("Capture Quality", "Set the quality of the capture", PyPeek.create_radio_button({"md":"Medium", "hi":"High"}, self.capture.quality, self.set_quality))
         self.delay_widget = PyPeek.create_row_widget("Delay Start", "Set the delay before the recording starts", PyPeek.create_spinbox(self.capture.delay, 0, 10, self.set_delay_start ))
         self.duration_widget = PyPeek.create_row_widget("Recording Limit", "Stop recording after a given time in seconds (0 = unlimited)", PyPeek.create_spinbox(self.capture.duration, 0, 600, self.set_duration ))
         self.update_widget = PyPeek.create_row_widget("Check For Updates", "Check for updates on startup", PyPeek.create_checkbox("", self.check_update_on_startup, self.set_check_update_on_startup))
@@ -737,14 +737,14 @@ class PyPeek(QMainWindow):
         self.block_resize_event = True
         if value:
             self.hide_grips()
-            self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/bounding-box-circles.png"))
-            self.fullscreen_button.setToolTip("Record window")
+            self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/display.png"))
+            self.fullscreen_button.setToolTip("Recording fullscreen")
             self.setFixedSize(self.minimum_header_width, self.minimum_header_height) # prevent manual resizing height
             self.clearMask()
         else:
             self.show_grips()
-            self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/display.png"))
-            self.fullscreen_button.setToolTip("Record fullscreen")
+            self.fullscreen_button.setIcon(QIcon(f"{app_path}/icon/window.png"))
+            self.fullscreen_button.setToolTip("Recording window")
             self.setMaximumSize(16777215, 16777215) # remove fixed height
             self.setMinimumSize(self.minimum_header_width, self.minimum_body_height)
             self.resize(self.record_width, self.record_height)
@@ -1060,7 +1060,7 @@ class Capture(QThread):
             seconds = 0
             while not self.halt:
                 st = time.time()
-                self._snapshot(self.capture_count)
+                self.snapshot_md(self.capture_count)
                 self.capture_count += 1
                 td = time.time()-st
                 wait = period-td
@@ -1092,7 +1092,7 @@ class Capture(QThread):
                 return
             self.fullscreen and self.hide_app_signal.emit()
             time.sleep(.2) # give app time to hide
-            filepath = self._snapshot(None, self.i_ext)
+            filepath = self.snapshot_hi(None, self.i_ext)
             self.snapshot_done_signal.emit(filepath)
 
         self.quit()
@@ -1218,7 +1218,27 @@ class Capture(QThread):
             except Exception as e:
                 logger.error(e)
 
-    def _snapshot(self, capture_count=None, i_ext="jpg"):
+    def snapshot_md(self, capture_count=None, i_ext="jpg"):
+        screen = self.active_screen or QApplication.instance().primaryScreen()
+        screenshot = QScreen.grabWindow(screen)
+        if self.show_cursor:
+            painter = QPainter(screenshot)
+            painter.drawPixmap(QCursor.pos(screen) - QPoint(screen.geometry().x(), screen.geometry().y()) - QPoint(7, 5), self.cursor_image)
+            painter.end()
+
+        pr = QScreen.devicePixelRatio(screen)
+        screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
+        if not self.fullscreen:
+            screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
+
+        not os.path.exists(self.current_cache_folder) and os.makedirs(self.current_cache_folder)
+        file_path = (f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}')
+        file_path = file_path[:-4] + f'_{capture_count:06d}.{i_ext}' if capture_count != None else file_path
+
+        screenshot.save(file_path, i_ext, 20 if self.quality == "md" else 80)
+        return file_path
+    
+    def snapshot_hi(self, capture_count=None, i_ext="jpg"):
         screen = self.active_screen or QApplication.instance().primaryScreen()
         screenshot = QScreen.grabWindow(screen)
         pr = QScreen.devicePixelRatio(screen)
@@ -1240,7 +1260,7 @@ class Capture(QThread):
         img.setDotsPerMeterX(img.dotsPerMeterX() * pr )
         img.setDotsPerMeterY(img.dotsPerMeterY() * pr )
 
-        img.save(file_path, i_ext, 80)
+        img.save(file_path, i_ext, 20 if self.quality == "md" else 80)
         return file_path
     
     @staticmethod
