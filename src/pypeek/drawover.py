@@ -536,6 +536,7 @@ class DrawOver(QMainWindow):
                 self.slider.setRange(0, self.frame_count)
                 self.slider.setValue(0)
 
+                range_slider.setMax(self.frame_count)
                 range_slider.setEnd(self.frame_count)
 
                 self.update_bg_image(self.image_filenames[0])
