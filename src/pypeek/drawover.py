@@ -20,34 +20,21 @@ class DrawOver(QMainWindow):
         self.setWindowIcon(QIcon(f"{app_path}/icon/peek.png"))
         self.setStyleSheet("* {background-color: #333; color: #fff;}")
 
+        self.pr = QScreen.devicePixelRatio(self._parent.windowHandle().screen() if self._parent else QGuiApplication.primaryScreen())
+
         self.image_width = 800
         self.image_height = 600
         self.reset_parent_onclose = True
 
         self.is_sequence = False
+        self.frame_rate = frame_rate
+        self.frame_count = 0
+        self.duration = 0
+
         self.encode_options = None
         self.out_filename = "drawover.png"
         self.out_path = f'{tempfile.gettempdir()}/peek'
         self.image_path = image_path
-        if os.path.isdir(image_path):
-            self.out_path = image_path
-            image_dir = QDir(image_path)
-            self.image_filenames = image_dir.entryList(['*.jpg'], QDir.Filter.Files, QDir.SortFlag.Name)
-            self.is_sequence = True
-            self.bg_pixmap = QPixmap(os.path.join(image_path, self.image_filenames[0]))
-            self.image_width = self.bg_pixmap.width()
-            self.image_height = self.bg_pixmap.height()
-            self.frame_rate = frame_rate
-            self.frame_count = len(self.image_filenames) - 1
-            self.duration = (float(self.frame_count) / self.frame_rate)*1000
-        elif os.path.isfile(image_path):
-            self.bg_pixmap = QPixmap(image_path)
-            self.image_width = self.bg_pixmap.width()
-            self.image_height = self.bg_pixmap.height()
-            self.out_path = os.path.dirname(image_path)
-        else:
-            self.bg_pixmap = QPixmap(self.image_width, self.image_height)
-            self.bg_pixmap.fill(Qt.GlobalColor.white)
 
         # Undo/Redo
         self.undo_history = Undo()
@@ -87,7 +74,7 @@ class DrawOver(QMainWindow):
         self.canvas_scale_factor = 1
         self.prev_pixmap = None
 
-        self.bg_image = self.create_bg_image()
+        self.bg_image = self.create_bg_image_widget()
         self.canvas = self.create_canvas()
         self.text_widget = QWidget()
         self.text_widget.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents)
@@ -100,7 +87,7 @@ class DrawOver(QMainWindow):
 
         self.canvas_widget = QWidget()
         self.canvas_widget.setLayout(canvas_layout)
-        self.canvas_widget.resize(self.image_width, self.image_height)
+        self.canvas_widget.resize(self.canvas_width, self.canvas_height)
 
         self.scene = QGraphicsScene(self)
         self.scene.addWidget(self.canvas_widget)
@@ -134,6 +121,9 @@ class DrawOver(QMainWindow):
         canvas_margin_layout.setContentsMargins(10,10,10,10)
         canvas_margin_layout.addWidget(self.view)
 
+        open_button = DrawOver.create_button("Open")
+        open_button.setFixedWidth(100)
+        open_button.clicked.connect(self.open_file)
         save_button = DrawOver.create_button("Save", "", "#0d6efd", "#0b5ed7", "#0a58ca")
         save_button.setFixedWidth(100)
         save_button.clicked.connect(self.save)
@@ -143,6 +133,7 @@ class DrawOver(QMainWindow):
         save_layout = QHBoxLayout()
         save_layout.setSpacing(10)
         save_layout.setContentsMargins(20,20,20,20)
+        save_layout.addWidget(open_button)
         save_layout.addStretch(1)
         save_layout.addWidget(close_button)
         save_layout.addWidget(save_button)
@@ -154,7 +145,7 @@ class DrawOver(QMainWindow):
         main_layout.addWidget(DrawOver.create_h_divider(2))
         main_layout.addLayout(canvas_margin_layout, 1)
         main_layout.addWidget(DrawOver.create_h_divider(2))
-        self.is_sequence and main_layout.addWidget(self.create_timeline(), 0)
+        main_layout.addWidget(self.create_timeline(), 0)
         main_layout.addLayout(save_layout, 0)
 
         main_widget = QWidget()
@@ -162,27 +153,8 @@ class DrawOver(QMainWindow):
 
         self.setCentralWidget(main_widget)
 
-        pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
+        self.open_file(self.image_path, frame_rate)
 
-        window_width = self.image_width / pr + 35
-        window_height = self.image_height / pr + 220 if self.is_sequence else self.image_height / pr + 160
-        screen_size = parent.windowHandle().screen().size() if parent else QGuiApplication.primaryScreen().size()
-        pref_width = screen_size.width() * 0.8
-        pref_height = screen_size.height() * 0.8
-        if window_width > pref_width:
-            window_width = pref_width
-        if window_height > pref_height:
-            window_height = pref_height
-
-        parent_screen_x = 0
-        parent_screen_y = 0
-        if parent:
-            parent_screen_x = parent.windowHandle().screen().geometry().topLeft().x()
-            parent_screen_y = parent.windowHandle().screen().geometry().topLeft().y()
-
-        self.reset_zoom()
-        self.resize(window_width, window_height)
-        self.move(((screen_size.width() - self.width()) / 2 ) + parent_screen_x, ((screen_size.height() - self.height()) / 2) + parent_screen_y )
         self.set_tool("select")
         self.setFocus()
 
@@ -202,11 +174,7 @@ class DrawOver(QMainWindow):
         self.view.setTransform(tr)
     
     def reset_zoom(self):
-        # self.view.resetTransform()
-        pr = QScreen.devicePixelRatio(QApplication.instance().primaryScreen())
-        scale_tr = QTransform()
-        scale_tr.scale(1/pr, 1/pr)
-        self.view.setTransform(scale_tr)
+        self.view.resetTransform()
     
     def clear_canvas(self):
         self.undo_history.push(ClearSceneCmd(self))
@@ -364,17 +332,17 @@ class DrawOver(QMainWindow):
 
         return toolbar
     
-    def create_bg_image(self):
+    def create_bg_image_widget(self):
         bg_image = QLabel()
         bg_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
         bg_image.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
-        bg_image.setPixmap(self.bg_pixmap)
 
         return bg_image
 
     def update_bg_image(self, image_filename):
         self.bg_pixmap = QPixmap(os.path.join(self.out_path, image_filename))
-        self.bg_image.setPixmap(self.bg_pixmap.scaled(self.canvas_width, self.canvas_height, Qt.AspectRatioMode.KeepAspectRatio))
+        self.bg_pixmap.setDevicePixelRatio(self.pr)
+        self.bg_image.setPixmap(self.bg_pixmap)
 
     def save(self):
         if len(self.items) > 0:
@@ -382,30 +350,96 @@ class DrawOver(QMainWindow):
             drawover_image_path = os.path.join(self.out_path, self.out_filename)
             self.encode_options = {"drawover_image_path": drawover_image_path, "drawover_range":range }
             self.canvas_widget.hide()
-            pixmap = QPixmap(self.canvas_width, self.canvas_height)
+            pixmap = QPixmap(self.image_width, self.image_height)
+            pixmap.setDevicePixelRatio(self.pr)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.Antialiasing,True)
-            self.scene.render(painter, QRectF(), QRectF(0, 0, self.canvas_width, self.canvas_height), Qt.KeepAspectRatio)
+            self.scene.render(painter, QRectF(), QRectF(0, 0, self.image_width, self.image_height), Qt.KeepAspectRatio)
             painter.end()
             self.canvas_widget.show()
-            pixmap.save(drawover_image_path, "png", 100)
+
+            img = pixmap.toImage()
+            img.setDotsPerMeterX(img.dotsPerMeterX() * self.pr )
+            img.setDotsPerMeterY(img.dotsPerMeterY() * self.pr )
+            img.save(drawover_image_path, "png", 100)
         elif self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
             range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
-        if self.slider:
+        if self.is_sequence:
             self.reset_parent_onclose = False
             self.close()
             self._parent.recording_drawover_done(self)
         else:
             self._parent.snapshot_drawover_done(self) and self.close()
 
+    def open_file(self, image_path=None, frame_rate=15):
+        if not image_path:
+            image_path = QFileDialog.getOpenFileName(self, "Open File", "", "Images (*.png *.jpg *.jpeg)")[0]
+            self.image_path = image_path
+            self.pr = 1
+        
+        self.clear_canvas()
+        self.view.setTransform(QTransform())
+
+        if os.path.isdir(image_path):
+            self.out_path = image_path
+            image_dir = QDir(image_path)
+            self.image_filenames = image_dir.entryList(['*.jpg'], QDir.Filter.Files, QDir.SortFlag.Name)
+            self.is_sequence = True
+            self.bg_pixmap = QPixmap(os.path.join(image_path, self.image_filenames[0]))
+            self.frame_rate = frame_rate
+            self.frame_count = len(self.image_filenames) - 1
+            self.duration = (float(self.frame_count) / self.frame_rate)*1000
+        elif os.path.isfile(image_path):
+            self.bg_pixmap = QPixmap(image_path)
+            self.out_path = os.path.dirname(image_path)
+        else:
+            self.bg_pixmap = QPixmap(800, 600)
+            self.bg_pixmap.fill(Qt.GlobalColor.white)
+
+        self.timeline.update()
+
+        self.bg_pixmap.setDevicePixelRatio(self.pr)
+        self.bg_image.setPixmap(self.bg_pixmap)
+
+        self.image_width = self.bg_pixmap.width()
+        self.image_height = self.bg_pixmap.height()
+
+        self.canvas_width = self.image_width / self.pr
+        self.canvas_height = self.image_height / self.pr
+
+        self.canvas_widget.resize(self.canvas_width, self.canvas_height)
+        self.scene.setSceneRect(0, 0, self.canvas_width, self.canvas_height)
+
+        window_width = self.canvas_width + 35
+        window_height = self.canvas_height + 220 if self.is_sequence else self.canvas_height + 160
+        screen_size = self._parent.windowHandle().screen().size() if self._parent else QGuiApplication.primaryScreen().size()
+
+        pref_width = screen_size.width() * 0.8
+        pref_height = screen_size.height() * 0.8
+        if window_width > pref_width:
+            window_width = pref_width
+        if window_height > pref_height:
+            window_height = pref_height
+
+        parent_screen_x = 0
+        parent_screen_y = 0
+        if self._parent:
+            parent_screen_x = self._parent.windowHandle().screen().geometry().topLeft().x()
+            parent_screen_y = self._parent.windowHandle().screen().geometry().topLeft().y()
+
+        self.reset_zoom()
+        self.resize(window_width, window_height)
+        self.move(((screen_size.width() - self.width()) / 2 ) + parent_screen_x, ((screen_size.height() - self.height()) / 2) + parent_screen_y )
+
+
     def create_canvas(self):
         canvas = QLabel()
         canvas.setAlignment(Qt.AlignmentFlag.AlignCenter)
         canvas.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
-        self.pixmap = QPixmap(self.image_width, self.image_height)
+        self.pixmap = QPixmap(self.canvas_width, self.canvas_height)
         self.pixmap.fill(Qt.GlobalColor.transparent)
         canvas.setPixmap(self.pixmap)
 
@@ -414,15 +448,15 @@ class DrawOver(QMainWindow):
 
     def create_timeline(self):
         self.slider = QSlider(Qt.Orientation.Horizontal)
-        self.slider.setRange(0, self.frame_count)
+        self.slider.setRange(0, 10)
         self.slider.valueChanged.connect(lambda x: (timeline.blockSignals(True),
                                                timeline.setCurrentTime((x - self.slider.minimum()) * (1000/self.frame_rate)),
                                                (timeline.stop(), timeline.resume()) if timeline.state() == QTimeLine.State.Running else None,
                                                timeline.blockSignals(False)
                                                ))
 
-        timeline = QTimeLine(self.duration, parent=self)
-        timeline.setFrameRange(0, len(self.image_filenames) - 1)
+        timeline = QTimeLine(10, parent=self)
+        timeline.setFrameRange(0, 10)
         timeline.setUpdateInterval(1000.0/self.frame_rate)
         timeline.setLoopCount(1)
         timeline.setEasingCurve(QEasingCurve.Linear)
@@ -460,9 +494,8 @@ class DrawOver(QMainWindow):
         # button_layout.addWidget(stop_button)
 
         range_slider = QRangeSlider()
-        range_slider.setMin(0)
-        range_slider.setMax(self.frame_count)
-        range_slider.setRange(0, self.frame_count)
+        range_slider.setStart(0)
+        range_slider.setEnd(10)
         range_slider.startValueChanged.connect(lambda x: (
             self.slider.setMinimum(x),
             self.slider.setValue(x),
@@ -499,6 +532,31 @@ class DrawOver(QMainWindow):
         # timeline_widget.setStyleSheet( "QWidget {background-color: #2a2a2a; border-radius: 5px; padding: 5px;}")
         timeline_widget.setLayout(layout)
         self.timeline = timeline
+
+        def update():
+            timeline_widget.setVisible(self.is_sequence)
+            if self.is_sequence:
+                timeline.blockSignals(True)
+                self.slider.blockSignals(True)
+                range_slider.blockSignals(True)
+
+                timeline.setDuration(self.duration)
+                timeline.setFrameRange(0, len(self.image_filenames) - 1)
+                timeline.setUpdateInterval(1000.0/self.frame_rate)
+
+                self.slider.setRange(0, self.frame_count)
+                self.slider.setValue(0)
+
+                range_slider.setEnd(self.frame_count)
+
+                self.update_bg_image(self.image_filenames[0])
+
+                timeline.blockSignals(False)
+                self.slider.blockSignals(False)
+                range_slider.blockSignals(False)
+
+        timeline.update = update
+
         return timeline_widget
 
     def create_color_tool(self):
@@ -827,7 +885,7 @@ class DrawOver(QMainWindow):
 
             self.current_text_item = QWidget()
             self.current_text_item.setStyleSheet("background-color: transparent;")
-            self.current_text_item.setFixedSize(self.image_width, self.image_height)
+            self.current_text_item.setFixedSize(self.canvas_width, self.canvas_height)
             text_input.setParent(self.current_text_item)
             self.scene.addWidget(self.current_text_item)
 
@@ -854,8 +912,8 @@ class DrawOver(QMainWindow):
         if not self.dragging:
             return
         self.end_point = e.position()
-        self.end_point.setX(min(self.image_width, max(0, self.end_point.x())))
-        self.end_point.setY(min(self.image_height, max(0, self.end_point.y())))
+        self.end_point.setX(min(self.canvas_width, max(0, self.end_point.x())))
+        self.end_point.setY(min(self.canvas_height, max(0, self.end_point.y())))
         if self.current_tool == "select" and self.select_start_point is not None:
             delta = self.end_point - self.select_start_point
             self.view.horizontalScrollBar().setValue(self.view.horizontalScrollBar().value() - delta.x())

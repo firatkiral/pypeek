@@ -1060,7 +1060,7 @@ class Capture(QThread):
             seconds = 0
             while not self.halt:
                 st = time.time()
-                self.snapshot_md(self.capture_count)
+                self.snapshot_hi(self.capture_count)
                 self.capture_count += 1
                 td = time.time()-st
                 wait = period-td
@@ -1194,13 +1194,15 @@ class Capture(QThread):
         self.start()
 
     def snapshot_drawover(self, drawover_image_path):
-        drawover_pixmap = QPixmap(drawover_image_path)
         filename = f'{self.current_cache_folder}/peek_{self.UID}.{self.i_ext}'
-        pixmap = QPixmap(filename)
+        pixmap = QImage(filename)
+        drawover_pixmap = QImage(drawover_image_path)
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing,True)
-        painter.drawPixmap(QPoint(), drawover_pixmap)
+        painter.drawImage(QPoint(), drawover_pixmap)
         painter.end()
+
         pixmap.save(filename, self.i_ext, 100)
         return filename
 
@@ -1219,7 +1221,7 @@ class Capture(QThread):
                 logger.error(e)
 
     def snapshot_md(self, capture_count=None, i_ext="jpg"):
-        screen = self.active_screen or QApplication.instance().primaryScreen()
+        screen = self.active_screen or QGuiApplication.primaryScreen()
         screenshot = QScreen.grabWindow(screen)
         if self.show_cursor:
             painter = QPainter(screenshot)
@@ -1239,16 +1241,16 @@ class Capture(QThread):
         return file_path
     
     def snapshot_hi(self, capture_count=None, i_ext="jpg"):
-        screen = self.active_screen or QApplication.instance().primaryScreen()
+        screen = self.active_screen or QGuiApplication.primaryScreen()
         screenshot = QScreen.grabWindow(screen)
         pr = QScreen.devicePixelRatio(screen)
+        screenshot.setDevicePixelRatio(pr)
 
         if self.show_cursor:
             painter = QPainter(screenshot)
             painter.drawPixmap(QCursor.pos(screen) - QPoint(screen.geometry().x() * pr, screen.geometry().y() * pr) - QPoint(7, 5), self.cursor_image)
             painter.end()
         
-        # screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
         if not self.fullscreen:
             screenshot = screenshot.copy(self.pos_x * pr, self.pos_y * pr, self.width * pr, self.height * pr)
 
