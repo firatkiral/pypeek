@@ -1032,7 +1032,7 @@ class Capture(QThread):
         self.duration = 0
         self.progress_range = (0, 100)
         self.active_screen = None
-        self.i_ext = "png"
+        self.i_ext = "jpg"
 
     def run(self):
         self.halt = False
@@ -1132,7 +1132,7 @@ class Capture(QThread):
             painter.setRenderHint(QPainter.Antialiasing,True)
             painter.drawPixmap(pos, drawover_pixmap)
             painter.end()
-            pixmap.save(filename, "jpg", 40 if self.quality == "md" else 80)
+            pixmap.save(filename, "jpg", 40 if self.quality == "md" else 100)
             passed_time = time.time()-start_time
             if passed_time > .3 or i == rng[1]-1 or i == rng[0]:
                 self.progress_signal.emit(f"%{math.ceil(Capture.map_range(i, rng[0], rng[1]-1, self.progress_range[0], self.progress_range[1]))}")
@@ -1196,7 +1196,7 @@ class Capture(QThread):
         painter.drawImage(QPoint(), drawover_pixmap)
         painter.end()
 
-        pixmap.save(filename, self.i_ext, 40 if self.quality == "md" else 80)
+        pixmap.save(filename, self.i_ext, 60 if self.quality == "md" else 100)
         return filename
 
     def clear_cache_files(self):
@@ -1230,7 +1230,7 @@ class Capture(QThread):
         file_path = (f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}')
         file_path = file_path[:-4] + f'_{capture_count:06d}.{i_ext}' if capture_count != None else file_path
 
-        screenshot.save(file_path, i_ext, 40 if self.quality == "md" else 80)
+        screenshot.save(file_path, i_ext, 60 if self.quality == "md" else 100)
         return file_path
     
     def snapshot_hi(self, capture_count=None, i_ext="jpg"):
@@ -1255,7 +1255,7 @@ class Capture(QThread):
         img.setDotsPerMeterX(img.dotsPerMeterX() * pr )
         img.setDotsPerMeterY(img.dotsPerMeterY() * pr )
 
-        img.save(file_path, i_ext, 40 if self.quality == "md" else 80)
+        img.save(file_path, i_ext, 60 if self.quality == "md" else 100)
         return file_path
     
     @staticmethod
