@@ -341,7 +341,6 @@ class DrawOver(QMainWindow):
 
     def update_bg_image(self, image_filename):
         self.bg_pixmap = QPixmap(os.path.join(self.out_path, image_filename))
-        self.bg_pixmap.setDevicePixelRatio(self.pr)
         self.bg_image.setPixmap(self.bg_pixmap)
 
     def save(self):
@@ -351,7 +350,6 @@ class DrawOver(QMainWindow):
             self.encode_options = {"drawover_image_path": drawover_image_path, "drawover_range":range }
             self.canvas_widget.hide()
             pixmap = QPixmap(self.image_width, self.image_height)
-            pixmap.setDevicePixelRatio(self.pr)
             pixmap.fill(Qt.GlobalColor.transparent)
             painter = QPainter(pixmap)
             painter.setRenderHint(QPainter.Antialiasing,True)
@@ -359,10 +357,7 @@ class DrawOver(QMainWindow):
             painter.end()
             self.canvas_widget.show()
 
-            img = pixmap.toImage()
-            img.setDotsPerMeterX(img.dotsPerMeterX() * self.pr )
-            img.setDotsPerMeterY(img.dotsPerMeterY() * self.pr )
-            img.save(drawover_image_path, "png", 100)
+            pixmap.save(drawover_image_path, "png", 100)
         elif self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
             range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
@@ -378,7 +373,6 @@ class DrawOver(QMainWindow):
         if not image_path:
             image_path = QFileDialog.getOpenFileName(self, "Open File", "", "Images (*.png *.jpg *.jpeg)")[0]
             self.image_path = image_path
-            self.pr = 1
         
         self.clear_canvas()
         self.view.setTransform(QTransform())
@@ -400,15 +394,10 @@ class DrawOver(QMainWindow):
             self.bg_pixmap.fill(Qt.GlobalColor.white)
 
         self.timeline.update()
-
-        self.bg_pixmap.setDevicePixelRatio(self.pr)
         self.bg_image.setPixmap(self.bg_pixmap)
 
-        self.image_width = self.bg_pixmap.width()
-        self.image_height = self.bg_pixmap.height()
-
-        self.canvas_width = self.image_width / self.pr
-        self.canvas_height = self.image_height / self.pr
+        self.canvas_width = self.image_width = self.bg_pixmap.width()
+        self.canvas_height = self.image_height = self.bg_pixmap.height()
 
         self.canvas_widget.resize(self.canvas_width, self.canvas_height)
         self.scene.setSceneRect(0, 0, self.canvas_width, self.canvas_height)

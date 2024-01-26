@@ -1060,7 +1060,7 @@ class Capture(QThread):
             seconds = 0
             while not self.halt:
                 st = time.time()
-                self.snapshot_hi(self.capture_count)
+                self.snapshot_md(self.capture_count)
                 self.capture_count += 1
                 td = time.time()-st
                 wait = period-td
@@ -1092,7 +1092,7 @@ class Capture(QThread):
                 return
             self.fullscreen and self.hide_app_signal.emit()
             time.sleep(.2) # give app time to hide
-            filepath = self.snapshot_hi(None, self.i_ext)
+            filepath = self.snapshot_md(None, self.i_ext)
             self.snapshot_done_signal.emit(filepath)
 
         self.quit()
@@ -1139,7 +1139,7 @@ class Capture(QThread):
             painter.setRenderHint(QPainter.Antialiasing,True)
             painter.drawPixmap(pos, drawover_pixmap)
             painter.end()
-            pixmap.save(filename, "jpg", 100)
+            pixmap.save(filename, "jpg", 20 if self.quality == "md" else 80)
             passed_time = time.time()-start_time
             if passed_time > .3 or i == rng[1]-1 or i == rng[0]:
                 self.progress_signal.emit(f"%{math.ceil(Capture.map_range(i, rng[0], rng[1]-1, self.progress_range[0], self.progress_range[1]))}")
@@ -1203,7 +1203,7 @@ class Capture(QThread):
         painter.drawImage(QPoint(), drawover_pixmap)
         painter.end()
 
-        pixmap.save(filename, self.i_ext, 100)
+        pixmap.save(filename, self.i_ext, 20 if self.quality == "md" else 80)
         return filename
 
     def clear_cache_files(self):
