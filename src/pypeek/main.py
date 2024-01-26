@@ -15,14 +15,7 @@ def init():
     if user_path is not None:
         return
     
-    if sys.platform == 'win32':
-        user_path = os.path.join(os.getenv('LOCALAPPDATA'), "Peek")
-    elif sys.platform == 'darwin':
-        user_path = os.path.join(os.path.expanduser("~/Library/Preferences"), "Peek")
-    elif sys.platform == 'linux':
-        user_path = os.path.join(os.getenv('XDG_CONFIG_HOME', os.path.expanduser("~/.config")), "Peek")
-    else:
-        user_path = os.path.join(os.path.expanduser("~"), ".peek")
+    user_path = os.path.join(os.path.expanduser("~"), ".peek")
     
     if not os.path.exists(user_path):
         os.mkdir(user_path)
