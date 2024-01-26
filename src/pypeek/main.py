@@ -66,7 +66,7 @@ class PyPeek(QMainWindow):
         self.capture.v_ext = "gif" # gif, mp4, webm
         self.capture.i_ext = "jpg" # png or jpg
         self.capture.fps = 15
-        self.capture.quality = "md" # md, hi
+        self.capture.quality = "hi" # md, hi
         self.capture.delay = 3
         self.record_width = 506
         self.record_height = 406
@@ -413,7 +413,7 @@ class PyPeek(QMainWindow):
         self.capture.v_ext = config.get('capture', 'v_ext', fallback='gif')
         self.capture.fps = config.getint('capture', 'fps', fallback=15)
         self.capture.i_ext = config.get('capture', 'img_format', fallback='jpg')
-        self.capture.quality = config.get('capture', 'quality', fallback='md')
+        self.capture.quality = config.get('capture', 'quality', fallback='hi')
         self.capture.delay = config.getint('capture', 'delay', fallback=3)
         self.capture.duration = config.getint('capture', 'duration', fallback=0)
         self.record_width = config.getint('capture', 'width', fallback=506)
