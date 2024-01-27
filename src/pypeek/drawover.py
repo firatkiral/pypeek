@@ -27,6 +27,7 @@ class DrawOver(QMainWindow):
         self.reset_parent_onclose = True
 
         self.is_sequence = False
+        self.image_filenames = None
         self.frame_rate = frame_rate
         self.frame_count = 0
         self.duration = 0
@@ -358,8 +359,8 @@ class DrawOver(QMainWindow):
             self.canvas_widget.show()
 
             pixmap.save(drawover_image_path, "png", 100)
-        elif self.slider and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count):
-            range = self.slider and (self.slider.minimum(), self.slider.maximum() + 1)
+        elif self.is_sequence and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count - 1):
+            range = (self.slider.minimum(), self.slider.maximum() + 1)
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
         if self.is_sequence:
@@ -384,7 +385,7 @@ class DrawOver(QMainWindow):
             self.is_sequence = True
             self.bg_pixmap = QPixmap(os.path.join(image_path, self.image_filenames[0]))
             self.frame_rate = frame_rate
-            self.frame_count = len(self.image_filenames) - 1
+            self.frame_count = len(self.image_filenames)
             self.duration = (float(self.frame_count) / self.frame_rate)*1000
         elif os.path.isfile(image_path):
             self.bg_pixmap = QPixmap(image_path)
@@ -438,11 +439,13 @@ class DrawOver(QMainWindow):
     def create_timeline(self):
         self.slider = QSlider(Qt.Orientation.Horizontal)
         self.slider.setRange(0, 10)
-        self.slider.valueChanged.connect(lambda x: (timeline.blockSignals(True),
-                                               timeline.setCurrentTime((x - self.slider.minimum()) * (1000/self.frame_rate)),
-                                               (timeline.stop(), timeline.resume()) if timeline.state() == QTimeLine.State.Running else None,
-                                               timeline.blockSignals(False)
-                                               ))
+        self.slider.valueChanged.connect(lambda x: (
+            timeline.blockSignals(True),
+            timeline.setCurrentTime((x - self.slider.minimum()) * (1000/self.frame_rate)),
+            (timeline.stop(), timeline.resume()) if timeline.state() == QTimeLine.State.Running else None, timeline.blockSignals(False),
+            self.update_bg_image(self.image_filenames[self.slider.value()])
+            )
+        )
 
         timeline = QTimeLine(10, parent=self)
         timeline.setFrameRange(0, 10)
@@ -483,8 +486,7 @@ class DrawOver(QMainWindow):
         # button_layout.addWidget(stop_button)
 
         range_slider = QRangeSlider()
-        range_slider.setStart(0)
-        range_slider.setEnd(10)
+        range_slider.setRange(0, 10)
         range_slider.startValueChanged.connect(lambda x: (
             self.slider.setMinimum(x),
             self.slider.setValue(x),
@@ -507,8 +509,6 @@ class DrawOver(QMainWindow):
         range_layout.addWidget(self.slider)
         range_layout.addWidget(range_slider)
 
-        self.slider.valueChanged.connect(lambda : self.update_bg_image(self.image_filenames[self.slider.value()]))
-
         slider_layout = QHBoxLayout()
         slider_layout.setSpacing(10)
         slider_layout.addLayout(button_layout, 0)
@@ -529,21 +529,21 @@ class DrawOver(QMainWindow):
                 self.slider.blockSignals(True)
                 range_slider.blockSignals(True)
 
-                timeline.setDuration(self.duration)
-                timeline.setFrameRange(0, len(self.image_filenames) - 1)
-                timeline.setUpdateInterval(1000.0/self.frame_rate)
-
-                self.slider.setRange(0, self.frame_count)
+                self.slider.setRange(0, self.frame_count - 1)
                 self.slider.setValue(0)
 
-                range_slider.setMax(self.frame_count)
-                range_slider.setEnd(self.frame_count)
+                timeline.setDuration(self.duration)
+                timeline.setFrameRange(0, self.frame_count - 1)
+                timeline.setUpdateInterval(1000.0/self.frame_rate)
 
                 self.update_bg_image(self.image_filenames[0])
 
                 timeline.blockSignals(False)
                 self.slider.blockSignals(False)
                 range_slider.blockSignals(False)
+
+                range_slider.setMax(self.frame_count - 1)
+                range_slider.setRange(0, self.frame_count - 1)
 
         timeline.update = update
 

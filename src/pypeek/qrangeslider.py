@@ -441,11 +441,11 @@ class QRangeSlider(QWidget, Ui_Form):
 
     def _valueToPos(self, value):
         """converts slider value to local pixel x coord"""
-        return scale(value, (self.min(), self.max()), (0, self.width()))
+        return scale(value, (self.min(), self.max()), (0, self.width() - 12))
 
     def _posToValue(self, xpos):
         """converts local pixel x coord to slider value"""
-        return scale(xpos, (0, self.width()), (self.min(), self.max()+1))
+        return scale(xpos, (0, self.width() - 12), (self.min(), self.max()))
 
     def _handleMoveSplitter(self, xpos, index):
         """private method for handling moving splitter handles"""
