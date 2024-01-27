@@ -130,7 +130,7 @@ class DrawOver(QMainWindow):
         save_button.clicked.connect(self.save)
         close_button = DrawOver.create_button("Close")
         close_button.setFixedWidth(100)
-        close_button.clicked.connect(self.close)
+        close_button.clicked.connect(self._close)
         save_layout = QHBoxLayout()
         save_layout.setSpacing(10)
         save_layout.setContentsMargins(20,20,20,20)
@@ -158,7 +158,6 @@ class DrawOver(QMainWindow):
 
         self.set_tool("select")
         self.setFocus()
-
 
     def zoom_in(self):
         scale_tr = QTransform()
@@ -1015,6 +1014,10 @@ class DrawOver(QMainWindow):
     def closeEvent(self, event):
         self.is_sequence and self.timeline.stop()
         self._parent.update_drawover_settings(self)
+
+    def _close(self):
+        self._parent.reset_ui()
+        self.close()
         
     @staticmethod
     def create_button(text="", icon=None, bgcolor= "#3e3e3e", hovercolor = "#494949", pressedcolor="#434343", callback=None):

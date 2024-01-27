@@ -52,7 +52,7 @@ class PyPeek(QMainWindow):
         self.capture.recording_done_signal.connect(self.recording_done)
         self.capture.encoding_done_signal.connect(self.encoding_done)
         self.capture.snapshot_done_signal.connect(self.snapshot_done)
-        self.capture.capture_stopped_signal.connect(self.end_capture_ui)
+        self.capture.capture_stopped_signal.connect(self.reset_ui)
         self.capture.countdown_signal.connect(self.update_countdown_ui)
         self.capture.run_timer_signal.connect(self.update_timer_ui)
         self.capture.minimize_to_tray_signal.connect(self.do_minimize_to_tray)
@@ -561,7 +561,7 @@ class PyPeek(QMainWindow):
             self.close_button.hide()
         self.block_resize_event = False
             
-    def end_capture_ui(self):
+    def reset_ui(self):
         self.block_resize_event = True
         self.tray_icon.hide()
         self.record_button_grp.show()
@@ -639,11 +639,10 @@ class PyPeek(QMainWindow):
                 shutil.move(filepath, new_filepath[0])
                 self.last_save_path = os.path.dirname(new_filepath[0])
                 drawover.close()
-                self.end_capture_ui()
+                self.reset_ui()
             except Exception as e:
                 logger.error(e)
             
-
     def record(self):
         self.prepare_capture_ui()
         self.capture.record()
@@ -681,14 +680,14 @@ class PyPeek(QMainWindow):
                 except Exception as e:
                     logger.error(e)
         
-        self.end_capture_ui()
+        self.reset_ui()
 
     def stop_capture(self):
         self.capture.stop()
 
     def stop_encoding(self):
         self.capture.terminate()
-        self.end_capture_ui()
+        self.reset_ui()
 
     def set_mask(self):
         if self.capture.fullscreen:
@@ -1264,7 +1263,8 @@ class Capture(QThread):
         return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
 class CheckUpdate(QThread):
-    update_check_done_signal = Signal(str) 
+    update_check_done_signal = Signal(str)
+
     def __init__(self):
         super().__init__()
 
@@ -1295,7 +1295,6 @@ class TryLock(QThread):
     
     def try_lock(self):
         return self.lock_file.tryLock(2000)
-
 
 app = QApplication(sys.argv)
 
