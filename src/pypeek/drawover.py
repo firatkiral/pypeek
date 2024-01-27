@@ -1,4 +1,4 @@
-import sys, os, tempfile, time
+import sys, os, tempfile, subprocess
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -344,6 +344,7 @@ class DrawOver(QMainWindow):
         self.bg_image.setPixmap(self.bg_pixmap)
 
     def save(self):
+        self.encode_options = {"drawover_image_path": None, "drawover_range":None }
         if len(self.items) > 0:
             range = (self.slider.minimum(), self.slider.maximum() + 1) if self.slider else None
             drawover_image_path = os.path.join(self.out_path, self.out_filename)
@@ -356,13 +357,10 @@ class DrawOver(QMainWindow):
             self.scene.render(painter, QRectF(), QRectF(0, 0, self.image_width, self.image_height), Qt.KeepAspectRatio)
             painter.end()
             self.canvas_widget.show()
-
             pixmap.save(drawover_image_path, "png", 100)
-        elif self.is_sequence and (self.slider.minimum() != 0 or self.slider.maximum() != self.frame_count - 1):
-            range = (self.slider.minimum(), self.slider.maximum() + 1)
-            self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
         if self.is_sequence:
+            self.encode_options["drawover_range"] = (self.slider.minimum(), self.slider.maximum() + 1)
             self._parent.recording_drawover_done(self)
         else:
             self._parent.snapshot_drawover_done(self)
@@ -377,16 +375,17 @@ class DrawOver(QMainWindow):
 
         if os.path.isfile(image_path):
             ext = os.path.splitext(image_path)[1]
-            if ext == ".gif" or ext == ".mp4":
+
+            if ext in [".gif", ".mp4"]:
                 self._parent.capture.clear_cache_files()
                 cache_folder = self._parent.capture.current_cache_folder
                 os.makedirs(cache_folder, exist_ok=True)
-                os.system(f'ffmpeg -i "{image_path}" -vsync "0" -start_number 0 "{cache_folder}/peek_{self._parent.capture.UID}_%06d.jpg"')
+                subprocess.run(['ffmpeg', '-i', image_path, '-start_number', '0', f'{cache_folder}/peek_{self._parent.capture.UID}_%06d.jpg'])
                 image_path = cache_folder
-            elif ext == ".jpg" or ext == ".jpeg":
+            elif ext in [".jpg", ".jpeg", ".png"]:
                 pass
             else:
-                print("Unsupported file format")
+                print(f"Unsupported file format: {ext}")
                 return
 
         if os.path.isdir(image_path):
