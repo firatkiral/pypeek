@@ -1,4 +1,4 @@
-import sys, os, tempfile
+import sys, os, tempfile, time
 from PySide6.QtWidgets import *
 from PySide6.QtCore import *
 from PySide6.QtGui import *
@@ -364,19 +364,31 @@ class DrawOver(QMainWindow):
             self.encode_options = {"drawover_image_path": None, "drawover_range":range }
 
         if self.is_sequence:
-            self.reset_parent_onclose = False
-            self.close()
             self._parent.recording_drawover_done(self)
         else:
-            self._parent.snapshot_drawover_done(self) and self.close()
+            self._parent.snapshot_drawover_done(self)
 
     def open_file(self, image_path=None, frame_rate=15):
         if not image_path:
-            image_path = QFileDialog.getOpenFileName(self, "Open File", "", "Images (*.png *.jpg *.jpeg)")[0]
+            image_path = QFileDialog.getOpenFileName(self, "Open File", "", "Images (*.png *.jpg *.jpeg *.gif *.mp4)")[0]
             self.image_path = image_path
         
         self.clear_canvas()
         self.view.setTransform(QTransform())
+
+        if os.path.isfile(image_path):
+            ext = os.path.splitext(image_path)[1]
+            if ext == ".gif" or ext == ".mp4":
+                self._parent.capture.clear_cache_files()
+                cache_folder = self._parent.capture.current_cache_folder
+                os.makedirs(cache_folder, exist_ok=True)
+                os.system(f'ffmpeg -i "{image_path}" -vsync "0" -start_number 0 "{cache_folder}/peek_{self._parent.capture.UID}_%06d.jpg"')
+                image_path = cache_folder
+            elif ext == ".jpg" or ext == ".jpeg":
+                pass
+            else:
+                print("Unsupported file format")
+                return
 
         if os.path.isdir(image_path):
             self.out_path = image_path
@@ -423,7 +435,6 @@ class DrawOver(QMainWindow):
         self.reset_zoom()
         self.resize(window_width, window_height)
         self.move(((screen_size.width() - self.width()) / 2 ) + parent_screen_x, ((screen_size.height() - self.height()) / 2) + parent_screen_y )
-
 
     def create_canvas(self):
         canvas = QLabel()
@@ -1002,10 +1013,8 @@ class DrawOver(QMainWindow):
             self.undo_history.push(AddSceneItemCmd(self, self.current_text_item))
 
     def closeEvent(self, event):
-        self.slider and self.timeline.stop()
+        self.is_sequence and self.timeline.stop()
         self._parent.update_drawover_settings(self)
-        if self.reset_parent_onclose:
-            self._parent.end_capture_ui()
         
     @staticmethod
     def create_button(text="", icon=None, bgcolor= "#3e3e3e", hovercolor = "#494949", pressedcolor="#434343", callback=None):

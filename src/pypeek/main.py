@@ -16,9 +16,7 @@ def init():
         return
     
     user_path = os.path.join(os.path.expanduser("~"), ".peek")
-    
-    if not os.path.exists(user_path):
-        os.mkdir(user_path)
+    os.makedirs(user_path, exist_ok=True)
 
     logger = logging.getLogger()
     logging.basicConfig(
@@ -614,6 +612,8 @@ class PyPeek(QMainWindow):
         self.capture.snapshot()
     
     def snapshot_done(self, filepath):
+        self.record_button_grp.show()
+        self.stop_button.hide()
         self.hide()
         self.tray_icon.hide()
         drawover = DrawOver(filepath, self.drawover_options, self.capture.true_fps, self)
@@ -638,11 +638,11 @@ class PyPeek(QMainWindow):
             try:
                 shutil.move(filepath, new_filepath[0])
                 self.last_save_path = os.path.dirname(new_filepath[0])
-                return True
+                drawover.close()
+                self.end_capture_ui()
             except Exception as e:
                 logger.error(e)
             
-        return False
 
     def record(self):
         self.prepare_capture_ui()
@@ -657,6 +657,7 @@ class PyPeek(QMainWindow):
         drawover.show()
     
     def recording_drawover_done(self, drawover):
+        drawover.close()
         self.show()
         self.capture.encode(drawover.encode_options)
 
