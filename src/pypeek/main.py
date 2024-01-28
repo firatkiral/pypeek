@@ -1603,8 +1603,8 @@ class DrawOver(QMainWindow):
 
         self.progress.setLabelText(f"Processing... {progress}%")
         self.progress.setValue(int(progress))
-        if int(progress) == 100:
-            self.progress.close()
+        # if int(progress) == 100:
+        #     self.progress.close()
     
     def decoding_done(self, filepath):
         self.progress.close()
@@ -1612,6 +1612,7 @@ class DrawOver(QMainWindow):
             self.load_file(filepath)
 
     def save_video(self, filepath):
+        self.progress.close()
         if filepath:
             filename = "peek"
             ext = os.path.splitext(os.path.basename(filepath))[1]
