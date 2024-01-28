@@ -1637,17 +1637,23 @@ class DrawOver(QMainWindow):
             self.image_path = capturer.screenshot_drawover(encode_options["drawover_image_path"])
         
         filename = "peek"
-        ext = os.path.splitext(os.path.basename(self.image_path))[1]
+        ext = capturer.i_ext
         number = 1
-        while os.path.isfile(os.path.join(self.last_save_path, f"peek_{str(number)}{ext}")):
+        while os.path.isfile(os.path.join(self.last_save_path, f"peek_{str(number)}.{ext}")):
             number += 1
 
-        filename = f"peek_{str(number)}{ext}"
+        filename = f"peek_{str(number)}.{ext}"
         self.last_save_path = self.last_save_path if os.path.exists(self.last_save_path) else os.path.expanduser("~")
-        new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), f"Images (*.{capturer.i_ext})")
+        new_filepath = QFileDialog.getSaveFileName(self, "Save Image", os.path.join(self.last_save_path, filename), f"Images (*.{ext})")
         
         if new_filepath[0]:
             try:
+                # image_ext = os.path.splitext(os.path.basename(self.image_path))[1]
+                # if image_ext == ext:
+                #     shutil.copy(self.image_path, new_filepath[0])
+                # else:
+                #     pixmap = QPixmap(self.image_path)
+                #     pixmap.save(new_filepath[0], ext, 60 if self.quality == "md" else 100)
                 shutil.copy(self.image_path, new_filepath[0])
                 self.last_save_path = os.path.dirname(new_filepath[0])
             except Exception as e:
@@ -1689,7 +1695,12 @@ class DrawOver(QMainWindow):
                 capturer.decode({"image_path":image_path})
                 return
             elif ext in [".jpg", ".jpeg", ".png"]:
-                pass
+                dirname = os.path.dirname(image_path)
+                if dirname != capturer.current_cache_folder:
+                    # its a file from outsourced folder
+                    pixmap = QPixmap(image_path)
+                    image_path = f'{capturer.current_cache_folder}/peek_{capturer.UID}.{capturer.i_ext}'
+                    pixmap.save(image_path, capturer.i_ext, 60 if capturer.quality == "md" else 100 )
             else:
                 logger.error(f"Unsupported file format: {ext}")
                 return
