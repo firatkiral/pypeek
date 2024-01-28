@@ -1590,7 +1590,9 @@ class DrawOver(QMainWindow):
 
     def show_progress(self):
         self.progress = QProgressDialog("Processing... 0%", "Cancel", 0, 100, self)
+        self.progress.setWindowTitle("Exporting Video")
         self.progress.setWindowModality(Qt.WindowModal)
+        self.progress.setWindowFlags(self.progress.windowFlags() | Qt.WindowType.FramelessWindowHint)
         self.progress.setMinimumDuration(0)
         self.progress.setAutoClose(False)
 
