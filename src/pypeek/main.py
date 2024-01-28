@@ -1746,7 +1746,7 @@ class DrawOver(QMainWindow):
     
     def open_file(self):
         image_path = QFileDialog.getOpenFileName(self, "Open File", "", "Images (*.png *.jpg *.jpeg *.gif *.mp4)")[0]
-        self.load_file(image_path) 
+        image_path and self.load_file(image_path)
 
     def new_file(self):
         # create dialog with image width and image height inputs
