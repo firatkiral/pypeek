@@ -2257,9 +2257,10 @@ class Capturer(QThread):
     def decode_video(self):
         os.makedirs(self.current_cache_folder, exist_ok=True)
         image_path = self.decode_options["image_path"]
-        r_frame_rate, self.true_fps, nb_frames = self.get_video_info(image_path)
+        nb_frames, duration = self.get_video_info(image_path)
+        self.true_fps = math.ceil((float(nb_frames) / duration))
 
-        systemcall = ['ffmpeg', '-i', image_path, '-start_number', '0', f'{self.current_cache_folder}/peek_{self.UID}_%06d.jpg', "-progress", "pipe:1"]
+        systemcall = ['ffmpeg', '-i', image_path, '-start_number', '0', "-qscale:v", "2", f'{self.current_cache_folder}/peek_{self.UID}_%06d.jpg', "-progress", "pipe:1"]
 
         try:
             # Shell is True on windows, otherwise the terminal window pops up on Windows app
@@ -2292,17 +2293,16 @@ class Capturer(QThread):
                 "-select_streams",
                 "v:0",
                 "-show_entries",
-                "stream=avg_frame_rate,r_frame_rate,nb_frames",
+                "stream=nb_frames,duration",
                 filename,
             ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
         ffprobe_out = str(result.stdout, "utf-8")
-        r_frame_rate = int(ffprobe_out.split("r_frame_rate=")[1].split("\n")[0].split("/")[0])
-        avg_frame_rate = int(ffprobe_out.split("avg_frame_rate=")[1].split("\n")[0].split("/")[0])
         nb_frames = int(ffprobe_out.split("nb_frames=")[1].split("\n")[0])
-        return r_frame_rate, avg_frame_rate, nb_frames
+        duration = float(ffprobe_out.split("duration=")[1].split("\n")[0])
+        return nb_frames, duration
     
     def encode(self, encode_options=None):
         self.mode = "encode"
