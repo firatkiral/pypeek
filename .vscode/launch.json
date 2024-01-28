@@ -8,7 +8,7 @@
             "name": "Python: Current Package",
             "type": "python",
             "request": "launch",
-            "program": "run.py",
+            "module": "pypeek",
             "console": "integratedTerminal",
             "justMyCode": true,
             "cwd": "${workspaceFolder}/src",
