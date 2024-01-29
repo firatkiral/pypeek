@@ -915,6 +915,7 @@ class DrawOver(QMainWindow):
         self.shape_width = 3
         self.text_color = "black"
         self.text_size = 13
+        self.filled = False
 
         self.load_settings()
 
@@ -1449,7 +1450,7 @@ class DrawOver(QMainWindow):
         return width_widget_action
 
     def create_shape_tool(self):
-        shapes = {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'rectangle':'square', 'ellipse':'circle' }
+        shapes = {'line':'slash-lg', 'arrow':'arrow-up-right', 'double_arrow':'arrows-angle-expand', 'rectangle':'square', 'ellipse':'circle', 'filled_rectangle':'filled-square', 'filled_ellipse':'filled-circle' }
         menu = QMenu(self)
         menu.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         menu.setStyleSheet("QMenu {background-color: #333; color: #fff; border-radius: 5px; padding: 5px;}")
@@ -1499,6 +1500,10 @@ class DrawOver(QMainWindow):
             self.set_rectangle_tool()
         elif tool == "ellipse":
             self.set_ellipse_tool()
+        elif tool == "filled_rectangle":
+            self.set_rectangle_tool(filled=True)
+        elif tool == "filled_ellipse":
+            self.set_ellipse_tool(filled=True)
         elif tool == "text":
             self.set_text_tool()
         else:
@@ -1526,12 +1531,14 @@ class DrawOver(QMainWindow):
         self.current_tool = "double_arrow"
         self.shape_tool.setChecked(True)
     
-    def set_rectangle_tool(self):
+    def set_rectangle_tool(self, filled=False):
         self.current_tool = "rectangle"
+        self.filled = filled
         self.shape_tool.setChecked(True)
     
-    def set_ellipse_tool(self):
+    def set_ellipse_tool(self, filled=False):
         self.current_tool = "ellipse"
+        self.filled = filled
         self.shape_tool.setChecked(True)
 
     def set_text_tool(self):
@@ -1541,7 +1548,7 @@ class DrawOver(QMainWindow):
     def update_brush_params(self):
         color = None
         width = None
-        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "rectangle" or self.current_tool == "ellipse":
+        if self.current_tool == "line" or self.current_tool == "arrow" or self.current_tool == "double_arrow" or self.current_tool == "rectangle" or self.current_tool == "ellipse" or self.current_tool == "filled_rectangle" or self.current_tool == "filled_ellipse":
             color = self.shape_color
             width = self.shape_width
         elif self.current_tool == "text":
@@ -1937,11 +1944,15 @@ class DrawOver(QMainWindow):
         if self.current_tool == "rectangle":
             self.current_rectangle_item = QGraphicsRectItem()
             self.current_rectangle_item.setPen(self.current_pen)
+            if self.filled:
+                self.current_rectangle_item.setBrush(self.current_brush)
             self.current_rectangle_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
             self.scene.addItem(self.current_rectangle_item)
         if self.current_tool == "ellipse":
             self.current_ellipse_item = QGraphicsEllipseItem()
             self.current_ellipse_item.setPen(self.current_pen)
+            if self.filled:
+                self.current_ellipse_item.setBrush(self.current_brush)
             self.current_ellipse_item.setRect(self.start_point.x(), self.start_point.y(), 0, 0)
             self.scene.addItem(self.current_ellipse_item)
         if self.current_tool == "text":
