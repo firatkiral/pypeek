@@ -56,6 +56,12 @@ Annotation tool is very useful when you want to highlight a specific area or dra
 
 #### Known Issues:
 
+- Mac: Can't save videos. The ffmpeg used for video encoding is an x86_64 binary. You may need to install [Rosetta](https://en.wikipedia.org/wiki/Rosetta_(software)) on ARM Macs. You can install it by running the following command in Terminal:
+
+```console
+softwareupdate --install-rosetta
+```
+
 - Linux: *"qt.qpa.plugin: Could not load the Qt platform plugin "xcb"..."*, install the following packages:
 
 ```console
