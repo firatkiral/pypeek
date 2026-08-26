@@ -1716,9 +1716,26 @@ class DrawOver(QMainWindow):
             self.image_dir = image_path
             self.image_path = None
             image_dir = QDir(image_path)
-            self.image_filenames = image_dir.entryList(['*.jpg'], QDir.Filter.Files, QDir.SortFlag.Name)
+            self.image_filenames = image_dir.entryList(
+                ['*.jpg'],
+                QDir.Filter.Files,
+                QDir.SortFlag.Name,
+            )
+
+            if not self.image_filenames:
+                logger.error(
+                    "No JPG frames found in recording directory: %s",
+                    image_path,
+                )
+                self.is_sequence = False
+                self.image_path = None
+                self.image_dir = image_path
+                return
+
             self.is_sequence = True
-            self.bg_pixmap = QPixmap(os.path.join(image_path, self.image_filenames[0]))
+            self.bg_pixmap = QPixmap(
+                os.path.join(image_path, self.image_filenames[0])
+            )
             self.frame_count = len(self.image_filenames)
             self.duration = (float(self.frame_count) / capturer.true_fps)*1000
         elif image_path and os.path.isfile(image_path):
@@ -2184,6 +2201,150 @@ class Capturer(QThread):
         self.active_screen = None
         self.i_ext = "jpg"
 
+        # Native Wayland / PipeWire capture
+        self.wayland_session = None
+        self.wayland_stream = None
+        self.wayland_capture_started = False
+
+    def _is_wayland(self):
+        return os.environ.get("XDG_SESSION_TYPE", "").lower() == "wayland"
+
+    def _start_wayland_capture(self):
+        """Open the GNOME portal and start a persistent PipeWire stream."""
+
+        if self.wayland_capture_started:
+            return True
+
+        try:
+            from pipewire_capture import PortalCapture, CaptureStream
+
+            logger.info("Starting Wayland portal capture")
+
+            portal = PortalCapture()
+            session = portal.select_window()
+
+            if session is None or not session.is_open:
+                logger.error("Wayland portal session was not opened")
+                return False
+
+            logger.info(
+                "Wayland capture selected: node=%s, size=%sx%s",
+                session.node_id,
+                session.width,
+                session.height,
+            )
+
+            stream = CaptureStream(
+                session.fd,
+                session.node_id,
+                session.width,
+                session.height,
+                capture_interval=1.0 / max(self.fps, 1),
+            )
+
+            stream.start()
+
+            self.wayland_session = session
+            self.wayland_stream = stream
+            self.wayland_capture_started = True
+
+            # Wait for the first frame.
+            deadline = time.time() + 5.0
+
+            while time.time() < deadline:
+                frame = stream.get_frame()
+
+                if frame is not None:
+                    logger.info(
+                        "Wayland PipeWire capture is receiving frames"
+                    )
+                    return True
+
+                time.sleep(0.02)
+
+            logger.error("Wayland PipeWire stream produced no frames")
+            self._stop_wayland_capture()
+            return False
+
+        except Exception as e:
+            logger.exception(
+                "Could not start Wayland capture: %s",
+                e,
+            )
+            self._stop_wayland_capture()
+            return False
+
+    def _stop_wayland_capture(self):
+        """Stop the PipeWire stream and close the portal session."""
+
+        stream = self.wayland_stream
+        session = self.wayland_session
+
+        self.wayland_stream = None
+        self.wayland_session = None
+        self.wayland_capture_started = False
+
+        if stream is not None:
+            try:
+                stream.stop()
+            except Exception as e:
+                logger.warning(
+                    "Could not stop Wayland stream: %s",
+                    e,
+                )
+
+        if session is not None:
+            try:
+                session.close()
+            except Exception as e:
+                logger.warning(
+                    "Could not close Wayland portal session: %s",
+                    e,
+                )
+
+    def _get_wayland_image(self):
+        """Get the latest PipeWire BGRA frame as a detached QImage."""
+
+        if self.wayland_stream is None:
+            return None
+
+        frame = self.wayland_stream.get_frame()
+
+        if frame is None:
+            return None
+
+        try:
+            height, width, channels = frame.shape
+
+            if channels != 4:
+                logger.error(
+                    "Unexpected PipeWire frame shape: %s",
+                    frame.shape,
+                )
+                return None
+
+            # pipewire-capture supplies BGRA uint8 data.
+            #
+            # QImage.Format_ARGB32 is BGRA in memory on little-endian
+            # Linux, so this avoids an unnecessary pixel conversion.
+            image = QImage(
+                frame.data,
+                width,
+                height,
+                width * 4,
+                QImage.Format.Format_ARGB32,
+            )
+
+            # Detach from NumPy/PipeWire-owned memory.
+            return image.copy()
+
+        except Exception as e:
+            logger.exception(
+                "Could not convert Wayland frame to QImage: %s",
+                e,
+            )
+            return None
+
     def run(self):
         self.halt = False
         if self.mode == "record":
@@ -2195,6 +2356,13 @@ class Capturer(QThread):
             self.run_timer_signal.emit(self.duration)
             self.fullscreen and self.minimize_to_tray_signal.emit()
             time.sleep(.2) # give the app time to move to the tray
+
+            if self._is_wayland():
+                if not self._start_wayland_capture():
+                    self.capture_stopped_signal.emit()
+                    self.quit()
+                    return
+
             self.clear_cache_files()
             self.capture_count = 0
             self.start_capture_time = time.time()
@@ -2216,6 +2384,7 @@ class Capturer(QThread):
 
             self.stop_capture_time = time.time()
             self.true_fps = math.ceil((float(self.capture_count) / (self.stop_capture_time-self.start_capture_time)))
+            self._stop_wayland_capture()
             self.recording_done_signal.emit(self.current_cache_folder)
         elif self.mode == "encode":
             self.progress_signal.emit("0")
@@ -2241,7 +2410,18 @@ class Capturer(QThread):
                 return
             self.fullscreen and self.hide_app_signal.emit()
             time.sleep(.2) # give app time to hide
+
+            if self._is_wayland():
+                if not self._start_wayland_capture():
+                    self.capture_stopped_signal.emit()
+                    self.quit()
+                    return
+
             filepath = self.screenshot_md(None, self.i_ext)
+
+            if self._is_wayland():
+                self._stop_wayland_capture()
+
             self.screenshot_done_signal.emit(filepath)
 
         self.quit()
@@ -2408,25 +2588,95 @@ class Capturer(QThread):
         return filename
 
     def screenshot_md(self, capture_count=None, i_ext="jpg"):
+        # --------------------------------------------------------
+        # Wayland
+        # --------------------------------------------------------
+        if self._is_wayland() and self.wayland_capture_started:
+            screenshot = self._get_wayland_image()
+
+            if screenshot is None:
+                logger.error("No Wayland frame available")
+                return None
+
+            if not self.fullscreen:
+                screenshot = screenshot.copy(
+                    self.pos_x,
+                    self.pos_y,
+                    self.width,
+                    self.height,
+                )
+
+            os.makedirs(self.current_cache_folder, exist_ok=True)
+
+            file_path = (
+                f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}'
+            )
+
+            if capture_count is not None:
+                file_path = (
+                    file_path[:-4]
+                    + f'_{capture_count:06d}.{i_ext}'
+                )
+
+            screenshot.save(
+                file_path,
+                i_ext,
+                60 if self.quality == "md" else 100,
+            )
+
+            return file_path
+
+        # --------------------------------------------------------
+        # Original X11 implementation
+        # --------------------------------------------------------
         screen = self.active_screen or QGuiApplication.primaryScreen()
         screenshot = QScreen.grabWindow(screen)
+
         if self.show_cursor:
             painter = QPainter(screenshot)
-            painter.drawPixmap(QCursor.pos(screen) - QPoint(screen.geometry().x(), screen.geometry().y()) - QPoint(7, 5), self.cursor_image)
+            painter.drawPixmap(
+                QCursor.pos(screen)
+                - QPoint(screen.geometry().x(), screen.geometry().y())
+                - QPoint(7, 5),
+                self.cursor_image,
+            )
             painter.end()
 
         pr = QScreen.devicePixelRatio(screen)
-        screenshot = screenshot.scaledToWidth(int(screenshot.size().width()/pr), Qt.TransformationMode.SmoothTransformation)
+
+        screenshot = screenshot.scaledToWidth(
+            int(screenshot.size().width() / pr),
+            Qt.TransformationMode.SmoothTransformation,
+        )
+
         if not self.fullscreen:
-            screenshot = screenshot.copy(self.pos_x, self.pos_y, self.width, self.height)
+            screenshot = screenshot.copy(
+                self.pos_x,
+                self.pos_y,
+                self.width,
+                self.height,
+            )
 
         os.makedirs(self.current_cache_folder, exist_ok=True)
-        file_path = (f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}')
-        file_path = file_path[:-4] + f'_{capture_count:06d}.{i_ext}' if capture_count != None else file_path
 
-        screenshot.save(file_path, i_ext, 60 if self.quality == "md" else 100)
+        file_path = (
+            f'{self.current_cache_folder}/peek_{self.UID}.{i_ext}'
+        )
+
+        if capture_count is not None:
+            file_path = (
+                file_path[:-4]
+                + f'_{capture_count:06d}.{i_ext}'
+            )
+
+        screenshot.save(
+            file_path,
+            i_ext,
+            60 if self.quality == "md" else 100,
+        )
+
         return file_path
-    
+
     def screenshot_hi(self, capture_count=None, i_ext="jpg"):
         screen = self.active_screen or QGuiApplication.primaryScreen()
         screenshot = QScreen.grabWindow(screen)
